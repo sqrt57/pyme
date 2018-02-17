@@ -1,0 +1,3 @@
+name: pyme
+dependencies:
+  - python=3
