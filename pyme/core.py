@@ -5,6 +5,8 @@ import weakref
 def write(obj):
     if '__write__' in dir(obj):
         return obj.__write__()
+    elif obj is None:
+        return "()"
     elif isinstance(obj, numbers.Integral):
         return repr(obj)
     elif isinstance(obj, str):
@@ -16,6 +18,8 @@ def write(obj):
 def display(obj):
     if '__display__' in dir(obj):
         return obj.__display__()
+    elif obj is None:
+        return "()"
     elif isinstance(obj, numbers.Integral):
         return str(obj)
     elif isinstance(obj, str):
@@ -31,10 +35,38 @@ class Pair:
         self.cdr = cdr
 
     def __write__(self):
-        return "({} . {})".format(write(self.car), write(self.cdr))
+        if (isinstance(self.car, Symbol) and self.car.name == "quote"
+                and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
+            return "'" + write(self.cdr.car)
+        else:
+            result = ["(", write(self.car)]
+            cur = self.cdr
+            while isinstance(cur, Pair):
+                result.append(" ")
+                result.append(write(cur.car))
+                cur = cur.cdr
+            if cur is not None:
+                result.append(" . ")
+                result.append(write(cur))
+            result.append(")")
+            return "".join(result)
 
     def __display__(self):
-        return "({} . {})".format(display(self.car), display(self.cdr))
+        if (isinstance(self.car, Symbol) and self.car.name == "quote"
+                and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
+            return "'" + display(self.cdr.car)
+        else:
+            result = ["(", display(self.car)]
+            cur = self.cdr
+            while isinstance(cur, Pair):
+                result.append(" ")
+                result.append(display(cur.car))
+                cur = cur.cdr
+            if cur is not None:
+                result.append(" . ")
+                result.append(display(cur))
+            result.append(")")
+            return "".join(result)
 
 
 class SymbolStore:
