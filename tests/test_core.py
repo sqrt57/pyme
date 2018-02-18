@@ -18,3 +18,11 @@ class TestCore(unittest.TestCase):
     def test_display_pair(self):
         pair = core.Pair(1, "qqq")
         self.assertEqual(core.display(pair), '(1 . qqq)')
+
+class TestSymbols(unittest.TestCase):
+
+    def test_unique(self):
+        store = core.SymbolStore()
+        a = store['qwe']
+        b = store['qwe']
+        self.assertEqual(a, b)
