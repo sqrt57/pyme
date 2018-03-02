@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import numbers
 import weakref
 
@@ -92,3 +93,69 @@ class Symbol:
 
     def __display__(self):
         return self.name
+
+
+class Eof:
+    pass
+
+
+class PortBase(ABC):
+
+    @abstractmethod
+    def readable(self):
+        pass
+
+    @abstractmethod
+    def writable(self):
+        pass
+
+    @abstractmethod
+    def close(self):
+        pass
+
+    @abstractmethod
+    def close_input(self):
+        pass
+
+    @abstractmethod
+    def close_output(self):
+        pass
+
+    @abstractmethod
+    def is_input_open(self):
+        pass
+
+    @abstractmethod
+    def is_output_open(self):
+        pass
+
+
+class TextualPortBase(PortBase):
+
+    @abstractmethod
+    def read_string(self, size=1):
+        pass
+
+    @abstractmethod
+    def peek_char(self):
+        pass
+
+    @abstractmethod
+    def read_line(self):
+        pass
+
+    @abstractmethod
+    def is_char_ready(self):
+        pass
+
+    @abstractmethod
+    def write_string(self, string):
+        pass
+
+    @abstractmethod
+    def newline(self):
+        pass
+
+    @abstractmethod
+    def flush_output(self):
+        pass

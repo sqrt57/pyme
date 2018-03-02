@@ -1,7 +1,6 @@
 import unittest
 
-from pyme import core
-from pyme.interop import scheme_list
+from pyme import core, interop
 
 class TestCore(unittest.TestCase):
 
@@ -19,7 +18,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_scheme_list(self):
-        x = scheme_list([1, 2])
+        x = interop.scheme_list([1, 2])
         self.assertIsInstance(x, core.Pair)
         self.assertEqual(x.car, 1)
         self.assertIsInstance(x.cdr, core.Pair)
@@ -27,7 +26,7 @@ class TestCore(unittest.TestCase):
         self.assertIsNone(x.cdr.cdr)
 
 
-class TestWriteDisplay(unittest.TestCase):
+class TestWrite(unittest.TestCase):
 
     def test_write_pair(self):
         pair = core.Pair(1, "qqq")
@@ -38,24 +37,24 @@ class TestWriteDisplay(unittest.TestCase):
         self.assertEqual(core.display(pair), '(1 . qqq)')
 
     def test_list(self):
-        obj = scheme_list([1, 2, 3])
+        obj = interop.scheme_list([1, 2, 3])
         self.assertEqual(core.write(obj), "(1 2 3)")
         self.assertEqual(core.display(obj), "(1 2 3)")
 
     def test_improper_list(self):
-        obj = scheme_list([1, 2, 3], 4)
+        obj = interop.scheme_list([1, 2, 3], 4)
         self.assertEqual(core.write(obj), "(1 2 3 . 4)")
         self.assertEqual(core.display(obj), "(1 2 3 . 4)")
 
     def test_empty_list(self):
-        obj = scheme_list([])
+        obj = interop.scheme_list([])
         self.assertEqual(core.write(obj), "()")
         self.assertEqual(core.display(obj), "()")
 
     def test_quote(self):
-        obj = scheme_list([
+        obj = interop.scheme_list([
             core.Symbol("quote"),
-            scheme_list([1, 2], 3)
+            interop.scheme_list([1, 2], 3)
         ])
         self.assertEqual(core.write(obj), "'(1 2 . 3)")
         self.assertEqual(core.display(obj), "'(1 2 . 3)")
