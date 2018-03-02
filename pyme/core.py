@@ -133,7 +133,7 @@ class PortBase(ABC):
 class TextualPortBase(PortBase):
 
     @abstractmethod
-    def read_string(self, size=1):
+    def read(self, size=1):
         pass
 
     @abstractmethod
@@ -141,7 +141,7 @@ class TextualPortBase(PortBase):
         pass
 
     @abstractmethod
-    def read_line(self):
+    def readline(self):
         pass
 
     @abstractmethod
