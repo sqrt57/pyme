@@ -1,7 +1,7 @@
 import io
 import unittest
 
-from pyme import core, ports, reader
+from pyme import core, exceptions, ports, reader
 
 
 class TestReader(unittest.TestCase):
@@ -29,3 +29,26 @@ class TestReader(unittest.TestCase):
         in_port = ports.TextStreamPort(io.StringIO("()"))
         core.write_to(reader.read(in_port), self.port)
         self.assertEqual(self.stream.getvalue(), "()")
+
+    def test_string(self):
+        in_port = ports.TextStreamPort(io.StringIO('"abc"'))
+        result = reader.read(in_port)
+        self.assertEqual(result, "abc")
+
+
+class TestReaderError(unittest.TestCase):
+
+    def test_broken_list(self):
+        in_port = ports.TextStreamPort(io.StringIO("("))
+        with self.assertRaises(exceptions.ReaderError):
+            reader.read(in_port)
+
+    def test_broken_string(self):
+        in_port = ports.TextStreamPort(io.StringIO('"q'))
+        with self.assertRaises(exceptions.ReaderError):
+            reader.read(in_port)
+
+    def test_right_bracket(self):
+        in_port = ports.TextStreamPort(io.StringIO(")"))
+        with self.assertRaises(exceptions.ReaderError):
+            reader.read(in_port)
