@@ -19,9 +19,23 @@ def _read_list(port):
         if isinstance(item, _RightBracket):
             return interop.scheme_list(result)
         elif isinstance(item, core.Eof):
-            raise ReaderException('Unexpected end of file')
+            raise exceptions.ReaderError('Unexpected end of file')
         else:
             result.append(item)
+
+
+def _read_string(port):
+    result = ""
+    while True:
+        item = port.peek_char()
+        if isinstance(item, core.Eof):
+            raise exceptions.ReaderError('Unexpected end of file')
+        elif item == '"':
+            port.read(1)
+            return result
+        else:
+            port.read(1)
+            result += item
 
 
 def _read(port):
@@ -54,6 +68,6 @@ def _read(port):
 
 def read(port):
     result = _read(port)
-    if result is _RightBracket:
+    if isinstance(result, _RightBracket):
         raise exceptions.ReaderError('Unexpected ")"')
     return result
