@@ -26,22 +26,27 @@ def _read_list(port):
 
 def _read(port):
     while True:
-        char = port.read(1)
-        if char == '':
-            return core.Eof()
+        char = port.peek_char()
+        if isinstance(char, core.Eof):
+            return char
         elif is_white(char):
-            pass
+            port.read(1)
         elif char == ';':
             port.readline()
         elif char == '(':
+            port.read(1)
             return _read_list(port)
         elif char == ')':
+            port.read(1)
             return _RightBracket.instance
         elif char == '"':
+            port.read(1)
             return _read_string(port)
         elif char == "'":
+            port.read(1)
             pass
         elif char == "#":
+            port.read(1)
             pass
         else:
             return _read_symbol(port)

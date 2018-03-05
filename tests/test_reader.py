@@ -11,21 +11,21 @@ class TestReader(unittest.TestCase):
         self.port = ports.TextStreamPort(self.stream)
 
     def test_empty(self):
-        port = io.StringIO("")
-        result = reader.read(port)
+        in_port = ports.TextStreamPort(io.StringIO(""))
+        result = reader.read(in_port)
         self.assertIsInstance(result, core.Eof)
 
     def test_whitespace(self):
-        port = io.StringIO("\t \n")
-        result = reader.read(port)
+        in_port = ports.TextStreamPort(io.StringIO("\t \n"))
+        result = reader.read(in_port)
         self.assertIsInstance(result, core.Eof)
 
     def test_comment(self):
-        port = io.StringIO(" ;hello\n")
-        result = reader.read(port)
+        in_port = ports.TextStreamPort(io.StringIO(" ;hello\n"))
+        result = reader.read(in_port)
         self.assertIsInstance(result, core.Eof)
 
     def test_empty_list(self):
-        s = "()"
-        core.write_to(reader.read(io.StringIO(s)), self.port)
+        in_port = ports.TextStreamPort(io.StringIO("()"))
+        core.write_to(reader.read(in_port), self.port)
         self.assertEqual(self.stream.getvalue(), "()")
