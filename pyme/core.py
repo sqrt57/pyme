@@ -96,7 +96,11 @@ class SymbolStore:
 class Symbol:
 
     def __init__(self, name):
-        self.name = name
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
 
     def write_to(self, port):
         port.write(self.name)

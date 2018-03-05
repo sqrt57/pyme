@@ -9,7 +9,11 @@ _RightBracket.instance = _RightBracket()
 
 
 def is_white(char):
-    return char in ' \n\r\t'
+    return char in " \n\r\t"
+
+
+def is_symbol_char(char):
+    return not char in "'\"(); \n\r\t"
 
 
 def _read_list(port):
@@ -38,6 +42,17 @@ def _read_string(port):
             result += item
 
 
+def _read_symbol(port):
+    result = ""
+    while True:
+        item = port.peek_char()
+        if isinstance(item, core.Eof) or not is_symbol_char(item):
+            return core.Symbol(result)
+        else:
+            port.read(1)
+            result += item
+
+
 def _read(port):
     while True:
         char = port.peek_char()
@@ -61,7 +76,7 @@ def _read(port):
             pass
         elif char == "#":
             port.read(1)
-            pass
+            return _read_special(port)
         else:
             return _read_symbol(port)
 

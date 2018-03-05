@@ -35,6 +35,48 @@ class TestReader(unittest.TestCase):
         result = reader.read(in_port)
         self.assertEqual(result, "abc")
 
+    def test_symbol(self):
+        in_port = ports.TextStreamPort(io.StringIO("abc"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_space(self):
+        in_port = ports.TextStreamPort(io.StringIO(" abc "))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_left_bracket(self):
+        in_port = ports.TextStreamPort(io.StringIO("abc("))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_right_bracket(self):
+        in_port = ports.TextStreamPort(io.StringIO("abc)"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_quote(self):
+        in_port = ports.TextStreamPort(io.StringIO("abc'"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_double_quote(self):
+        in_port = ports.TextStreamPort(io.StringIO('abc"'))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
+    def test_symbol_semicolon(self):
+        in_port = ports.TextStreamPort(io.StringIO('abc;'))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "abc")
+
 
 class TestReaderError(unittest.TestCase):
 
