@@ -53,12 +53,12 @@ class TextStreamPort(core.TextualPortBase):
         elif self._peeked == '':
             return core.Eof()
         elif size < 0:
-            result = self._peeked + self._stream.readstring(size)
+            result = self._peeked + self._stream.read(size)
             self._peeked = None
             return result
         elif size > len(self._peeked):
             result = self._peeked \
-                + self._stream.readstring(size - len(self._peeked))
+                + self._stream.read(size - len(self._peeked))
             self._peeked = None
             return result
         elif size == len(self._peeked):
