@@ -1,10 +1,14 @@
 import io
 import unittest
 
-from pyme import core, reader
+from pyme import core, ports, reader
 
 
 class TestReader(unittest.TestCase):
+
+    def setUp(self):
+        self.stream = io.StringIO()
+        self.port = ports.TextStreamPort(self.stream)
 
     def test_empty(self):
         port = io.StringIO("")
@@ -23,5 +27,5 @@ class TestReader(unittest.TestCase):
 
     def test_empty_list(self):
         s = "()"
-        result = core.write(reader.read(io.StringIO(s)))
-        self.assertEqual(result, "()")
+        core.write_to(reader.read(io.StringIO(s)), self.port)
+        self.assertEqual(self.stream.getvalue(), "()")

@@ -3,30 +3,38 @@ import numbers
 import weakref
 
 
-def write(obj):
-    if 'write' in dir(obj):
-        return obj.write()
+def write_to(obj, port):
+    if 'write_to' in dir(obj):
+        obj.write_to(port)
     elif obj is None:
-        return "()"
+        port.write("()")
     elif isinstance(obj, numbers.Integral):
-        return repr(obj)
+        port.write(repr(obj))
     elif isinstance(obj, str):
-        return '"{}"'.format(obj)
+        port.write('"')
+        port.write(obj)
+        port.write('"')
     else:
-        return "#<Python: {!r}>".format(obj)
+        port.write("#<Python: ")
+        port.write(repr(obj))
+        port.write(">")
 
 
-def display(obj):
-    if 'display' in dir(obj):
-        return obj.display()
+def display_to(obj, port):
+    if 'display_to' in dir(obj):
+        obj.display_to(port)
     elif obj is None:
-        return "()"
+        port.write("()")
     elif isinstance(obj, numbers.Integral):
-        return str(obj)
+        port.write(str(obj))
     elif isinstance(obj, str):
-        return str(obj)
+        port.write(obj)
+    elif 'write_to' in dir(obj):
+        obj.write_to(port)
     else:
-        return write(obj)
+        port.write("#<Python: ")
+        port.write(str(obj))
+        port.write(">")
 
 
 class Pair:
@@ -35,39 +43,41 @@ class Pair:
         self.car = car
         self.cdr = cdr
 
-    def write(self):
+    def write_to(self, port):
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
-            return "'" + write(self.cdr.car)
+            port.write("'")
+            write_to(self.cdr.car, port)
         else:
-            result = ["(", write(self.car)]
+            port.write("(")
+            write_to(self.car, port)
             cur = self.cdr
             while isinstance(cur, Pair):
-                result.append(" ")
-                result.append(write(cur.car))
+                port.write(" ")
+                write_to(cur.car, port)
                 cur = cur.cdr
             if cur is not None:
-                result.append(" . ")
-                result.append(write(cur))
-            result.append(")")
-            return "".join(result)
+                port.write(" . ")
+                write_to(cur, port)
+            port.write(")")
 
-    def display(self):
+    def display_to(self, port):
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
-            return "'" + display(self.cdr.car)
+            port.write("'")
+            display_to(self.cdr.car, port)
         else:
-            result = ["(", display(self.car)]
+            port.write("(")
+            display_to(self.car, port)
             cur = self.cdr
             while isinstance(cur, Pair):
-                result.append(" ")
-                result.append(display(cur.car))
+                port.write(" ")
+                display_to(cur.car, port)
                 cur = cur.cdr
             if cur is not None:
-                result.append(" . ")
-                result.append(display(cur))
-            result.append(")")
-            return "".join(result)
+                port.write(" . ")
+                display_to(cur, port)
+            port.write(")")
 
 
 class SymbolStore:
@@ -88,11 +98,8 @@ class Symbol:
     def __init__(self, name):
         self.name = name
 
-    def write(self):
-        return self.name
-
-    def display(self):
-        return self.name
+    def write_to(self, port):
+        port.write(self.name)
 
 
 class Eof:
