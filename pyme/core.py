@@ -149,7 +149,7 @@ class TextualPortBase(PortBase):
         pass
 
     @abstractmethod
-    def write_string(self, string):
+    def write(self, string):
         pass
 
     @abstractmethod

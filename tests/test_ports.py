@@ -4,7 +4,7 @@ import unittest
 from pyme import core, ports
 
 
-class TestPorts(unittest.TestCase):
+class TestReadPorts(unittest.TestCase):
 
     def test_read(self):
         port = ports.TextStreamPort(io.StringIO("abcdefgh"))
@@ -124,3 +124,18 @@ class TestPorts(unittest.TestCase):
         self.assertIsInstance(result1, core.Eof)
         self.assertIsInstance(result2, core.Eof)
         self.assertIsInstance(result3, core.Eof)
+
+
+class TestWritePorts(unittest.TestCase):
+
+    def test_write(self):
+        stream = io.StringIO()
+        port = ports.TextStreamPort(stream)
+        port.write("abc")
+        self.assertEqual(stream.getvalue(), "abc")
+
+    def test_newline(self):
+        stream = io.StringIO()
+        port = ports.TextStreamPort(stream)
+        port.newline()
+        self.assertEqual(stream.getvalue(), "\n")

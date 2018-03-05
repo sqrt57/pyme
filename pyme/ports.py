@@ -103,7 +103,7 @@ class TextStreamPort(core.TextualPortBase):
     def is_char_ready(self):
         raise NotImplementedError()
 
-    def write_string(self, string):
+    def write(self, string):
         if not self._writable:
             raise io.UnsupportedOperation("not writable")
         return self._stream.write(string)
