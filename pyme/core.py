@@ -4,8 +4,8 @@ import weakref
 
 
 def write(obj):
-    if '__write__' in dir(obj):
-        return obj.__write__()
+    if 'write' in dir(obj):
+        return obj.write()
     elif obj is None:
         return "()"
     elif isinstance(obj, numbers.Integral):
@@ -17,8 +17,8 @@ def write(obj):
 
 
 def display(obj):
-    if '__display__' in dir(obj):
-        return obj.__display__()
+    if 'display' in dir(obj):
+        return obj.display()
     elif obj is None:
         return "()"
     elif isinstance(obj, numbers.Integral):
@@ -35,7 +35,7 @@ class Pair:
         self.car = car
         self.cdr = cdr
 
-    def __write__(self):
+    def write(self):
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
             return "'" + write(self.cdr.car)
@@ -52,7 +52,7 @@ class Pair:
             result.append(")")
             return "".join(result)
 
-    def __display__(self):
+    def display(self):
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
             return "'" + display(self.cdr.car)
@@ -88,10 +88,10 @@ class Symbol:
     def __init__(self, name):
         self.name = name
 
-    def __write__(self):
+    def write(self):
         return self.name
 
-    def __display__(self):
+    def display(self):
         return self.name
 
 
