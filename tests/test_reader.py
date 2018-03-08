@@ -72,7 +72,7 @@ class TestReader(unittest.TestCase):
         self.assertEqual(result.name, "abc")
 
     def test_symbol_semicolon(self):
-        in_port = ports.TextStreamPort(io.StringIO('abc;'))
+        in_port = ports.TextStreamPort(io.StringIO("abc;"))
         result = reader.read(in_port)
         self.assertIsInstance(result, core.Symbol)
         self.assertEqual(result.name, "abc")
@@ -83,14 +83,52 @@ class TestReader(unittest.TestCase):
         self.assertEqual(self.stream.getvalue(), "'(a b c)")
 
     def test_true(self):
-        in_port = ports.TextStreamPort(io.StringIO('#t'))
+        in_port = ports.TextStreamPort(io.StringIO("#t"))
         result = reader.read(in_port)
         self.assertIs(result, True)
 
     def test_false(self):
-        in_port = ports.TextStreamPort(io.StringIO('#f()'))
+        in_port = ports.TextStreamPort(io.StringIO("#f()"))
         result = reader.read(in_port)
         self.assertIs(result, False)
+
+    def test_symbol_with_digits(self):
+        in_port = ports.TextStreamPort(io.StringIO("123abc"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "123abc")
+
+    def test_num(self):
+        in_port = ports.TextStreamPort(io.StringIO("123"))
+        result = reader.read(in_port)
+        self.assertEqual(result, 123)
+
+    def test_plus_num(self):
+        in_port = ports.TextStreamPort(io.StringIO("+45"))
+        result = reader.read(in_port)
+        self.assertEqual(result, 45)
+
+    def test_minus_num(self):
+        in_port = ports.TextStreamPort(io.StringIO("-23"))
+        result = reader.read(in_port)
+        self.assertEqual(result, -23)
+
+    def test_zero_num(self):
+        in_port = ports.TextStreamPort(io.StringIO('0'))
+        result = reader.read(in_port)
+        self.assertEqual(result, 0)
+
+    def test_plus(self):
+        in_port = ports.TextStreamPort(io.StringIO("+"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "+")
+
+    def test_minus(self):
+        in_port = ports.TextStreamPort(io.StringIO("-"))
+        result = reader.read(in_port)
+        self.assertIsInstance(result, core.Symbol)
+        self.assertEqual(result.name, "-")
 
 
 class TestReaderError(unittest.TestCase):

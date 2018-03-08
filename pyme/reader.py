@@ -16,6 +16,24 @@ def is_symbol_char(char):
     return not char in "'\"(); \n\r\t"
 
 
+char_to_digit = {
+    '0': 0,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    '6': 6,
+    '7': 7,
+    '8': 8,
+    '9': 9,
+}
+
+
+def to_digit(char):
+    return char_to_digit.get(char)
+
+
 def _read_list(port):
     result = []
     while True:
@@ -42,15 +60,40 @@ def _read_string(port):
             result += item
 
 
-def _read_symbol(port):
+def _slice_symbol_or_number(port):
     result = ""
     while True:
         item = port.peek_char()
         if core.is_eof(item) or not is_symbol_char(item):
-            return core.Symbol(result)
+            return result
         else:
             port.read(1)
             result += item
+
+
+def  _parse_integer(string):
+    sign = 1
+    if string[0] == "+":
+        string = string[1:]
+    elif string[0] == "-":
+        sign = -1
+        string = string[1:]
+    if len(string) == 0: return None
+    result = 0
+    for char in string:
+        digit = to_digit(char)
+        if digit is None: return None
+        result = result*10 + digit
+    return sign * result
+
+
+def _get_symbol_or_number(string):
+    if string == ".":
+        raise exceptions.ReaderError("Illegal use of `.'")
+    as_integer = _parse_integer(string)
+    if as_integer is not None:
+        return as_integer
+    return core.Symbol(string)
 
 
 def _read_quoted(port):
@@ -109,7 +152,8 @@ def _read(port):
             port.read(1)
             return _read_special(port)
         else:
-            return _read_symbol(port)
+            string = _slice_symbol_or_number(port)
+            return _get_symbol_or_number(string)
 
 
 def read(port):
