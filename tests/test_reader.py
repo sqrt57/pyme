@@ -77,6 +77,21 @@ class TestReader(unittest.TestCase):
         self.assertIsInstance(result, core.Symbol)
         self.assertEqual(result.name, "abc")
 
+    def test_quote(self):
+        in_port = ports.TextStreamPort(io.StringIO("' ( a b c )"))
+        core.write_to(reader.read(in_port), self.port)
+        self.assertEqual(self.stream.getvalue(), "'(a b c)")
+
+    def test_true(self):
+        in_port = ports.TextStreamPort(io.StringIO('#t'))
+        result = reader.read(in_port)
+        self.assertIs(result, True)
+
+    def test_false(self):
+        in_port = ports.TextStreamPort(io.StringIO('#f()'))
+        result = reader.read(in_port)
+        self.assertIs(result, False)
+
 
 class TestReaderError(unittest.TestCase):
 

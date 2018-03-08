@@ -110,6 +110,10 @@ class Eof:
     pass
 
 
+def is_eof(obj):
+    return isinstance(obj, Eof)
+
+
 class PortBase(ABC):
 
     @abstractmethod
