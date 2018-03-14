@@ -80,7 +80,7 @@ class Pair:
             port.write(")")
 
 
-class SymbolStore:
+class SymbolTable:
 
     def __init__(self):
         self._symbols = weakref.WeakValueDictionary()

@@ -13,7 +13,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(pair.car, "hello")
 
     def test_symbol_unique(self):
-        store = core.SymbolStore()
+        store = core.SymbolTable()
         a = store['qwe']
         b = store['qwe']
         self.assertEqual(a, b)
