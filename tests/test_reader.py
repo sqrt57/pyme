@@ -9,7 +9,7 @@ class TestReader(unittest.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
         self.port = ports.TextStreamPort(self.stream)
-        self.reader = reader.Reader()
+        self.reader = reader.Reader(symbol_table=core.SymbolTable())
 
     def test_empty(self):
         in_port = ports.TextStreamPort(io.StringIO(""))
@@ -131,11 +131,23 @@ class TestReader(unittest.TestCase):
         self.assertIsInstance(result, core.Symbol)
         self.assertEqual(result.name, "-")
 
+    def test_symbols_eq(self):
+        in_port = ports.TextStreamPort(io.StringIO("abc abc"))
+        result1 = self.reader.read(in_port)
+        result2 = self.reader.read(in_port)
+        self.assertIs(result1, result2)
+
+    def test_quote_eq(self):
+        in_port = ports.TextStreamPort(io.StringIO("quote 'abc"))
+        result1 = self.reader.read(in_port)
+        result2 = self.reader.read(in_port)
+        self.assertIs(result1, result2.car)
+
 
 class TestReaderError(unittest.TestCase):
 
     def setUp(self):
-        self.reader = reader.Reader()
+        self.reader = reader.Reader(symbol_table=core.SymbolTable())
 
     def test_broken_list(self):
         in_port = ports.TextStreamPort(io.StringIO("("))

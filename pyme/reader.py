@@ -36,6 +36,11 @@ def to_digit(char):
 
 class Reader:
 
+    def __init__(self, *, symbol_table):
+        if symbol_table is None:
+            raise TypeError("symbol_table is required, got None")
+        self._symbol_table = symbol_table
+
     def _read_list(self, port):
         result = []
         while True:
@@ -91,7 +96,7 @@ class Reader:
         as_integer = self._parse_integer(string)
         if as_integer is not None:
             return as_integer
-        return core.Symbol(string)
+        return self._symbol_table[string]
 
     def _read_quoted(self, port):
         quoted = self._read(port)
@@ -99,7 +104,7 @@ class Reader:
             raise exceptions.ReaderError('Unexpected ")".')
         if isinstance(quoted, core.Eof):
             raise exceptions.ReaderError('Unexpected end of file.')
-        return interop.scheme_list([core.Symbol("quote"), quoted])
+        return interop.scheme_list([self._symbol_table["quote"], quoted])
 
     def _read_special(self, port):
         char = port.peek_char()
