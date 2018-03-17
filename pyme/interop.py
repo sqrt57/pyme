@@ -1,7 +1,30 @@
-from pyme import core
+import io
+
+from pyme import core, ports, reader
 
 def scheme_list(lst, cdr=None):
     result = cdr
     for item in reversed(lst):
         result = core.Pair(item, result)
     return result
+
+
+def read_str(str, symbol_table=None):
+    if symbol_table is None:
+        symbol_table = core.SymbolTable()
+    in_port = ports.TextStreamPort(io.StringIO(str))
+    reader_ = reader.Reader(symbol_table=symbol_table)
+    return reader_.read(in_port)
+
+
+def write_str(obj):
+    stream = io.StringIO()
+    port = ports.TextStreamPort(stream)
+    core.write_to(obj, port)
+    return stream.getvalue()
+
+def display_str(obj):
+    stream = io.StringIO()
+    port = ports.TextStreamPort(stream)
+    core.display_to(obj, port)
+    return stream.getvalue()

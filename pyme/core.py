@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import numbers
 import weakref
 
+from pyme import exceptions
+
 
 def write_to(obj, port):
     if 'write_to' in dir(obj):
@@ -95,6 +97,8 @@ class SymbolTable:
 
 class Symbol:
 
+    __slots__ = ["__weakref__", "_name"]
+
     def __init__(self, name):
         self._name = name
 
@@ -104,6 +108,21 @@ class Symbol:
 
     def write_to(self, port):
         port.write(self.name)
+
+
+class Environment:
+
+    __slots__ = ["parent", "bindings"]
+
+    def __init__(self, *, parent=None, bindings=None):
+        self.parent = parent
+        self.bindings = {} if bindings is None else bindings
+
+    def __getitem__(self, index):
+        if index in self.bindings:
+            return self.bindings[index]
+        else:
+            raise exceptions.IdentifierNotBoundError(str(index))
 
 
 class Eof:
