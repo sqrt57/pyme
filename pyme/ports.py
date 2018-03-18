@@ -1,9 +1,9 @@
 import io
 
-from pyme import core
+from pyme import types
 
 
-class TextStreamPort(core.TextualPortBase):
+class TextStreamPort(types.TextualPortBase):
 
     def __init__(self, stream, *, readable=True, writable=True):
         self._stream = stream
@@ -47,11 +47,11 @@ class TextStreamPort(core.TextualPortBase):
             result = self._stream.read(size)
             if result == "":
                 self._peeked = ""
-                return core.Eof()
+                return types.Eof()
             else:
                 return result
         elif self._peeked == '':
-            return core.Eof()
+            return types.Eof()
         elif size < 0:
             result = self._peeked + self._stream.read(size)
             self._peeked = None
@@ -76,7 +76,7 @@ class TextStreamPort(core.TextualPortBase):
         if self._peeked is None:
             self._peeked = self._stream.read(1)
         if self._peeked == "":
-            return core.Eof()
+            return types.Eof()
         else:
             return self._peeked
 
@@ -87,11 +87,11 @@ class TextStreamPort(core.TextualPortBase):
             result = self._stream.readline()
             if result == "":
                 self._peeked = ""
-                return core.Eof()
+                return types.Eof()
             else:
                 return result
         elif self._peeked == '':
-            return core.Eof()
+            return types.Eof()
         elif self._peeked == '\n':
             self._peeked = None
             return '\n'

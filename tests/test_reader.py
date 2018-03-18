@@ -1,7 +1,7 @@
 import io
 import unittest
 
-from pyme import core, exceptions, ports, reader
+from pyme import base, exceptions, ports, reader, types, write
 
 
 class TestReader(unittest.TestCase):
@@ -9,26 +9,26 @@ class TestReader(unittest.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
         self.port = ports.TextStreamPort(self.stream)
-        self.reader = reader.Reader(symbol_table=core.SymbolTable())
+        self.reader = reader.Reader(symbol_table=types.SymbolTable())
 
     def test_empty(self):
         in_port = ports.TextStreamPort(io.StringIO(""))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Eof)
+        self.assertTrue(base.eofp(result))
 
     def test_whitespace(self):
         in_port = ports.TextStreamPort(io.StringIO("\t \n"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Eof)
+        self.assertTrue(base.eofp(result))
 
     def test_comment(self):
         in_port = ports.TextStreamPort(io.StringIO(" ;hello\n"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Eof)
+        self.assertTrue(base.eofp(result))
 
     def test_empty_list(self):
         in_port = ports.TextStreamPort(io.StringIO("()"))
-        core.write_to(self.reader.read(in_port), self.port)
+        write.write_to(self.reader.read(in_port), self.port)
         self.assertEqual(self.stream.getvalue(), "()")
 
     def test_string(self):
@@ -39,48 +39,48 @@ class TestReader(unittest.TestCase):
     def test_symbol(self):
         in_port = ports.TextStreamPort(io.StringIO("abc"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_space(self):
         in_port = ports.TextStreamPort(io.StringIO(" abc "))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_left_bracket(self):
         in_port = ports.TextStreamPort(io.StringIO("abc("))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_right_bracket(self):
         in_port = ports.TextStreamPort(io.StringIO("abc)"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_quote(self):
         in_port = ports.TextStreamPort(io.StringIO("abc'"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_double_quote(self):
         in_port = ports.TextStreamPort(io.StringIO('abc"'))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_symbol_semicolon(self):
         in_port = ports.TextStreamPort(io.StringIO("abc;"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
 
     def test_quote(self):
         in_port = ports.TextStreamPort(io.StringIO("' ( a b c )"))
-        core.write_to(self.reader.read(in_port), self.port)
+        write.write_to(self.reader.read(in_port), self.port)
         self.assertEqual(self.stream.getvalue(), "'(a b c)")
 
     def test_true(self):
@@ -96,7 +96,7 @@ class TestReader(unittest.TestCase):
     def test_symbol_with_digits(self):
         in_port = ports.TextStreamPort(io.StringIO("123abc"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "123abc")
 
     def test_num(self):
@@ -122,13 +122,13 @@ class TestReader(unittest.TestCase):
     def test_plus(self):
         in_port = ports.TextStreamPort(io.StringIO("+"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "+")
 
     def test_minus(self):
         in_port = ports.TextStreamPort(io.StringIO("-"))
         result = self.reader.read(in_port)
-        self.assertIsInstance(result, core.Symbol)
+        self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "-")
 
     def test_symbols_eq(self):
@@ -147,7 +147,7 @@ class TestReader(unittest.TestCase):
 class TestReaderError(unittest.TestCase):
 
     def setUp(self):
-        self.reader = reader.Reader(symbol_table=core.SymbolTable())
+        self.reader = reader.Reader(symbol_table=types.SymbolTable())
 
     def test_broken_list(self):
         in_port = ports.TextStreamPort(io.StringIO("("))

@@ -1,42 +1,7 @@
 from abc import ABC, abstractmethod
-import numbers
 import weakref
 
-from pyme import exceptions
-
-
-def write_to(obj, port):
-    if 'write_to' in dir(obj):
-        obj.write_to(port)
-    elif obj is None:
-        port.write("()")
-    elif isinstance(obj, numbers.Integral):
-        port.write(repr(obj))
-    elif isinstance(obj, str):
-        port.write('"')
-        port.write(obj)
-        port.write('"')
-    else:
-        port.write("#<Python: ")
-        port.write(repr(obj))
-        port.write(">")
-
-
-def display_to(obj, port):
-    if 'display_to' in dir(obj):
-        obj.display_to(port)
-    elif obj is None:
-        port.write("()")
-    elif isinstance(obj, numbers.Integral):
-        port.write(str(obj))
-    elif isinstance(obj, str):
-        port.write(obj)
-    elif 'write_to' in dir(obj):
-        obj.write_to(port)
-    else:
-        port.write("#<Python: ")
-        port.write(str(obj))
-        port.write(">")
+from pyme import exceptions, write
 
 
 class Pair:
@@ -49,36 +14,36 @@ class Pair:
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
             port.write("'")
-            write_to(self.cdr.car, port)
+            write.write_to(self.cdr.car, port)
         else:
             port.write("(")
-            write_to(self.car, port)
+            write.write_to(self.car, port)
             cur = self.cdr
             while isinstance(cur, Pair):
                 port.write(" ")
-                write_to(cur.car, port)
+                write.write_to(cur.car, port)
                 cur = cur.cdr
             if cur is not None:
                 port.write(" . ")
-                write_to(cur, port)
+                write.write_to(cur, port)
             port.write(")")
 
     def display_to(self, port):
         if (isinstance(self.car, Symbol) and self.car.name == "quote"
                 and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
             port.write("'")
-            display_to(self.cdr.car, port)
+            write.display_to(self.cdr.car, port)
         else:
             port.write("(")
-            display_to(self.car, port)
+            write.display_to(self.car, port)
             cur = self.cdr
             while isinstance(cur, Pair):
                 port.write(" ")
-                display_to(cur.car, port)
+                write.display_to(cur.car, port)
                 cur = cur.cdr
             if cur is not None:
                 port.write(" . ")
-                display_to(cur, port)
+                write.display_to(cur, port)
             port.write(")")
 
 
@@ -127,10 +92,6 @@ class Environment:
 
 class Eof:
     pass
-
-
-def is_eof(obj):
-    return isinstance(obj, Eof)
 
 
 class PortBase(ABC):

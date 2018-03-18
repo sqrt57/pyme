@@ -1,7 +1,7 @@
 import io
 import unittest
 
-from pyme import core, ports
+from pyme import base, ports
 
 
 class TestReadPorts(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestReadPorts(unittest.TestCase):
         result3 = port.read()
         self.assertEqual(result1, "abc")
         self.assertEqual(result2, "defgh")
-        self.assertIsInstance(result3, core.Eof)
+        self.assertTrue(base.eofp(result3))
 
     def test_readline(self):
         port = ports.TextStreamPort(io.StringIO("abc\n\ndef"))
@@ -24,7 +24,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result1, "abc\n")
         self.assertEqual(result2, "\n")
         self.assertEqual(result3, "def")
-        self.assertIsInstance(result4, core.Eof)
+        self.assertTrue(base.eofp(result4))
 
     def test_peek_read_n(self):
         port = ports.TextStreamPort(io.StringIO("abcdefg"))
@@ -45,16 +45,8 @@ class TestReadPorts(unittest.TestCase):
         port.read()
         result1 = port.peek_char()
         result2 = port.read()
-        self.assertIsInstance(result1, core.Eof)
-        self.assertIsInstance(result2, core.Eof)
-
-    def test_peek_read_eof(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
-        port.read()
-        result1 = port.peek_char()
-        result2 = port.read()
-        self.assertIsInstance(result1, core.Eof)
-        self.assertIsInstance(result2, core.Eof)
+        self.assertTrue(base.eofp(result1))
+        self.assertTrue(base.eofp(result2))
 
     def test_peek_read_read(self):
         port = ports.TextStreamPort(io.StringIO("abcdefg"))
@@ -64,17 +56,6 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result1, "a")
         self.assertEqual(result2, "abc")
         self.assertEqual(result3, "def")
-
-    def test_peek_read_peak_read(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
-        result1 = port.peek_char()
-        result2 = port.read(3)
-        result3 = port.peek_char()
-        result4 = port.read(3)
-        self.assertEqual(result1, "a")
-        self.assertEqual(result2, "abc")
-        self.assertEqual(result3, "d")
-        self.assertEqual(result4, "def")
 
     def test_peek_read_peak_read(self):
         port = ports.TextStreamPort(io.StringIO("abcdefg"))
@@ -111,9 +92,9 @@ class TestReadPorts(unittest.TestCase):
         result1 = port.readline()
         result2 = port.peek_char()
         result3 = port.readline()
-        self.assertIsInstance(result1, core.Eof)
-        self.assertIsInstance(result2, core.Eof)
-        self.assertIsInstance(result3, core.Eof)
+        self.assertTrue(base.eofp(result1))
+        self.assertTrue(base.eofp(result2))
+        self.assertTrue(base.eofp(result3))
 
     def test_peek_readline_peek_eof(self):
         port = ports.TextStreamPort(io.StringIO("\nabc\ndef\ngh"))
@@ -121,9 +102,9 @@ class TestReadPorts(unittest.TestCase):
         result1 = port.peek_char()
         result2 = port.readline()
         result3 = port.peek_char()
-        self.assertIsInstance(result1, core.Eof)
-        self.assertIsInstance(result2, core.Eof)
-        self.assertIsInstance(result3, core.Eof)
+        self.assertTrue(base.eofp(result1))
+        self.assertTrue(base.eofp(result2))
+        self.assertTrue(base.eofp(result3))
 
 
 class TestWritePorts(unittest.TestCase):

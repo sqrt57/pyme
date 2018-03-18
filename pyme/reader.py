@@ -1,4 +1,4 @@
-from pyme import core, exceptions, interop
+from pyme import exceptions, interop, base
 
 
 class _RightBracket:
@@ -47,7 +47,7 @@ class Reader:
             item = self._read(port)
             if isinstance(item, _RightBracket):
                 return interop.scheme_list(result)
-            elif core.is_eof(item):
+            elif base.eofp(item):
                 raise exceptions.ReaderError('Unexpected end of file.')
             else:
                 result.append(item)
@@ -56,7 +56,7 @@ class Reader:
         result = ""
         while True:
             item = port.peek_char()
-            if core.is_eof(item):
+            if base.eofp(item):
                 raise exceptions.ReaderError('Unexpected end of file.')
             elif item == '"':
                 port.read(1)
@@ -69,7 +69,7 @@ class Reader:
         result = ""
         while True:
             item = port.peek_char()
-            if core.is_eof(item) or not is_symbol_char(item):
+            if base.eofp(item) or not is_symbol_char(item):
                 return result
             else:
                 port.read(1)
@@ -102,25 +102,25 @@ class Reader:
         quoted = self._read(port)
         if isinstance(quoted, _RightBracket):
             raise exceptions.ReaderError('Unexpected ")".')
-        if isinstance(quoted, core.Eof):
+        if base.eofp(quoted):
             raise exceptions.ReaderError('Unexpected end of file.')
         return interop.scheme_list([self._symbol_table["quote"], quoted])
 
     def _read_special(self, port):
         char = port.peek_char()
-        if isinstance(char, core.Eof):
+        if base.eofp(char):
             raise exceptions.ReaderError('Unexpected end of file.')
         elif char == 't':
             port.read(1)
             next_char = port.peek_char()
-            if not core.is_eof(next_char) and is_symbol_char(next_char):
+            if not base.eofp(next_char) and is_symbol_char(next_char):
                 raise exceptions.ReaderError("Invalid hash syntax: #"
                                              + char + next_char)
             return True
         elif char == 'f':
             port.read(1)
             next_char = port.peek_char()
-            if not core.is_eof(next_char) and is_symbol_char(next_char):
+            if not base.eofp(next_char) and is_symbol_char(next_char):
                 raise exceptions.ReaderError("Invalid hash syntax: #"
                                              + char + next_char)
             return False
@@ -130,7 +130,7 @@ class Reader:
     def _read(self, port):
         while True:
             char = port.peek_char()
-            if isinstance(char, core.Eof):
+            if base.eofp(char):
                 return char
             elif is_white(char):
                 port.read(1)

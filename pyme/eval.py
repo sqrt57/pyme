@@ -1,6 +1,6 @@
 import numbers
 
-from pyme import core, scheme_base, exceptions, interop
+from pyme import base, exceptions, interop
 
 
 def eval(expr, env):
@@ -8,11 +8,11 @@ def eval(expr, env):
         return expr
     elif isinstance(expr, str):
         return expr
-    elif isinstance(expr, core.Symbol):
+    elif base.symbolp(expr):
         return env[expr]
-    elif isinstance(expr, core.Pair):
+    elif base.pairp(expr):
         args, rest = interop.from_scheme_list(expr.cdr)
-        if not scheme_base.nullp(rest):
+        if not base.nullp(rest):
             raise exceptions.EvalError("Expected proper list in procedure application")
         proc = eval(expr.car, env)
         args = [eval(x, env) for x in args]
