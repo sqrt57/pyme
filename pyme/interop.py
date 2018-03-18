@@ -1,12 +1,20 @@
 import io
 
-from pyme import core, ports, reader
+from pyme import core, ports, reader, scheme_base
 
 def scheme_list(lst, cdr=None):
     result = cdr
     for item in reversed(lst):
         result = core.Pair(item, result)
     return result
+
+
+def from_scheme_list(lst):
+    result = []
+    while scheme_base.pairp(lst):
+        result.append(lst.car)
+        lst = lst.cdr
+    return result, lst
 
 
 def read_str(str, symbol_table=None):
@@ -22,6 +30,7 @@ def write_str(obj):
     port = ports.TextStreamPort(stream)
     core.write_to(obj, port)
     return stream.getvalue()
+
 
 def display_str(obj):
     stream = io.StringIO()
