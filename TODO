@@ -1,5 +1,5 @@
 + Writer
 + Reader
-- Apply
-- Eval
++ Apply
++ Eval
 - Make all runtime errors subclass EvalError or SchemeError
