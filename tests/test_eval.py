@@ -28,11 +28,21 @@ class TestEval(unittest.TestCase):
         result = eval.eval(expr, env=env)
         self.assertEqual(result, 3)
 
-    def test_deep_recursive(self):
+    def test_recursive(self):
         n = 100
         string = "(+ 1 "*n + ")"*n
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["+"]: base.plus})
         expr = interop.read_str(string, symbol_table=symbol_table)
+        result = eval.eval(expr, env=env)
+        self.assertEqual(result, n)
+
+    def test_deep_recursive(self):
+        n = 1000
+        expr = 0
+        plus = types.Symbol("+")
+        for i in range(n):
+            expr = base.cons(plus, base.cons(1, base.cons(expr, None)))
+        env = types.Environment(bindings={plus: base.plus})
         result = eval.eval(expr, env=env)
         self.assertEqual(result, n)
