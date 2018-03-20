@@ -46,3 +46,17 @@ class TestEval(unittest.TestCase):
         env = types.Environment(bindings={plus: base.plus})
         result = eval.eval(expr, env=env)
         self.assertEqual(result, n)
+
+    def test_if_true(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={symbol_table["if"]: eval.scheme_if})
+        expr = interop.read_str("(if 1 2 3)", symbol_table=symbol_table)
+        result = eval.eval(expr, env=env)
+        self.assertEqual(result, 2)
+
+    def test_if_false(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={symbol_table["if"]: eval.scheme_if})
+        expr = interop.read_str("(if #f 2 3)", symbol_table=symbol_table)
+        result = eval.eval(expr, env=env)
+        self.assertEqual(result, 3)
