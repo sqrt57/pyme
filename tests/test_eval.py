@@ -60,3 +60,10 @@ class TestEval(unittest.TestCase):
         expr = interop.read_str("(if #f 2 3)", symbol_table=symbol_table)
         result = eval.eval(expr, env=env)
         self.assertEqual(result, 3)
+
+    def test_quote(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={symbol_table["quote"]: eval.quote})
+        expr = interop.read_str("'abc", symbol_table=symbol_table)
+        result = eval.eval(expr, env=env)
+        self.assertEqual(result, symbol_table["abc"])

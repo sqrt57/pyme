@@ -85,7 +85,7 @@ class ApplyProcOrSpecialContinuation(Continuation):
     def eval(self, evaluator):
         proc = self.proc_result.values[0]
         if is_special(proc):
-            proc(*self.args, evaluator=evaluator, result_box=self.result_box)
+            proc(*self.args, evaluator=evaluator, result_to=self.result_box)
         else:
             arg_conts = [EvalContinuation(arg) for arg in self.args]
             arg_results = [arg_cont.result_box for arg_cont in arg_conts]
@@ -124,12 +124,17 @@ class IfContinuation(Continuation):
 
 
 @special
-def scheme_if(if_, then_, else_, *, evaluator, result_box):
+def scheme_if(if_, then_, else_, *, evaluator, result_to):
     eval_cont = EvalContinuation(if_)
     if_cont = IfContinuation(
-        eval_cont.result_box, then_, else_, result_to=result_box)
+        eval_cont.result_box, then_, else_, result_to=result_to)
     evaluator.push_continuation(if_cont)
     evaluator.push_continuation(eval_cont)
+
+
+@special
+def quote(arg, *, evaluator, result_to):
+    result_to.values = [arg]
 
 
 def eval(expr, *, env):
