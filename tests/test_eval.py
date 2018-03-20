@@ -41,7 +41,7 @@ class TestEval(unittest.TestCase):
         n = 1000
         expr = 0
         plus = types.Symbol("+")
-        for i in range(n):
+        for _ in range(n):
             expr = base.cons(plus, base.cons(1, base.cons(expr, None)))
         env = types.Environment(bindings={plus: base.plus})
         result = eval.eval(expr, env=env)

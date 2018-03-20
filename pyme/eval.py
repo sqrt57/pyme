@@ -4,7 +4,7 @@ import numbers
 from pyme import base, exceptions, interop
 
 
-class Result:
+class ResultBox:
 
     def __init__(self):
         self.values = None
@@ -12,31 +12,31 @@ class Result:
 
 class Continuation(ABC):
 
-    def __init__(self, *, result=None):
-        self._result = result or Result()
+    def __init__(self, *, result_box=None):
+        self._result_box = result_box or ResultBox()
 
     @abstractmethod
     def eval(self, evaluator): pass
 
     @property
-    def result(self):
-        return self._result
+    def result_box(self):
+        return self._result_box
 
 
 class EvalContinuation(Continuation):
 
-    def __init__(self, expr, *, result=None):
-        super().__init__(result=result)
+    def __init__(self, expr, *, result_box=None):
+        super().__init__(result_box=result_box)
         self.expr = expr
 
     def eval(self, evaluator):
         if isinstance(self.expr, numbers.Integral):
-            self.result.values = [self.expr]
+            self.result_box.values = [self.expr]
         elif isinstance(self.expr, str):
-            self.result.values = [self.expr]
+            self.result_box.values = [self.expr]
         elif base.symbolp(self.expr):
             value = evaluator.env[self.expr]
-            self.result.values = [value]
+            self.result_box.values = [value]
         elif base.pairp(self.expr):
             proc = self.expr.car
             args, rest = interop.from_scheme_list(self.expr.cdr)
@@ -44,9 +44,9 @@ class EvalContinuation(Continuation):
                 raise exceptions.EvalError("Expected proper list in procedure application")
             proc_cont = EvalContinuation(proc)
             arg_conts = [EvalContinuation(arg) for arg in args]
-            proc_result = proc_cont.result
-            arg_results = [arg_cont.result for arg_cont in arg_conts]
-            apply_cont = ApplyContinuation(proc_result, arg_results, result=self.result)
+            proc_result = proc_cont.result_box
+            arg_results = [arg_cont.result_box for arg_cont in arg_conts]
+            apply_cont = ApplyContinuation(proc_result, arg_results, result_box=self.result_box)
             evaluator.push_continuation(apply_cont)
             evaluator.push_continuations(arg_conts)
             evaluator.push_continuation(proc_cont)
@@ -56,8 +56,8 @@ class EvalContinuation(Continuation):
 
 class ApplyContinuation(Continuation):
 
-    def __init__(self, proc_result, arg_results, *, result=None):
-        super().__init__(result=result)
+    def __init__(self, proc_result, arg_results, *, result_box=None):
+        super().__init__(result_box=result_box)
         self.proc_result = proc_result
         self.arg_results = arg_results
 
@@ -65,7 +65,7 @@ class ApplyContinuation(Continuation):
         proc = self.proc_result.values[0]
         args = [arg.values[0] for arg in self.arg_results]
         result = proc(*args)
-        self.result.values = [result]
+        self.result_box.values = [result]
 
 
 class Evaluator:
@@ -73,11 +73,6 @@ class Evaluator:
     def __init__(self, *, env):
         self._continuations = []
         self.env = env
-
-    def eval(self, expr):
-        while self._continuations:
-            continuation = self._continuations.pop()
-            continuation.run(self)
 
     def push_continuation(self, continuation):
         self._continuations.append(continuation)
@@ -90,9 +85,9 @@ class Evaluator:
 def eval(expr, *, env):
     evaluator = Evaluator(env=env)
     continuation = EvalContinuation(expr)
-    result = continuation.result
+    result_box = continuation.result_box
     evaluator.push_continuation(continuation)
     while evaluator._continuations:
         continuation = evaluator._continuations.pop()
         continuation.eval(evaluator)
-    return result.values[0]
+    return result_box.values[0]
