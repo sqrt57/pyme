@@ -1,3 +1,5 @@
+import numbers
+
 from pyme import types
 
 
@@ -21,6 +23,14 @@ def eofp(obj):
 
 def symbolp(obj):
     return isinstance(obj, types.Symbol)
+
+
+def numberp(obj):
+    return isinstance(obj, numbers.Integral)
+
+
+def stringp(obj):
+    return isinstance(obj, str)
 
 
 def plus(*objs):

@@ -1,5 +1,8 @@
-+ Writer
-+ Reader
-+ Apply
-+ Eval
+- Compiler and evaluator:
+    + constants
+    - variable read
+    - Function call
+    - if
+    - quote
+    - lambda
 - Make all runtime errors subclass EvalError or SchemeError
