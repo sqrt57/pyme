@@ -3,6 +3,7 @@ import unittest
 
 from pyme import base, interop, ports, types, write
 
+
 class TestCore(unittest.TestCase):
 
     def test_pair(self):
@@ -25,7 +26,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(x.car, 1)
         self.assertTrue(base.pairp(x.cdr))
         self.assertEqual(x.cdr.car, 2)
-        self.assertIsNone(x.cdr.cdr)
+        self.assertTrue(base.nullp(x.cdr.cdr))
 
 
 class TestWrite(unittest.TestCase):

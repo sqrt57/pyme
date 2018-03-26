@@ -1,8 +1,13 @@
 import io
 
-from pyme import base, ports, reader, types, write
+from pyme import base
+from pyme import ports
+from pyme import reader
+from pyme import types
+from pyme import write
 
-def scheme_list(lst, cdr=None):
+
+def scheme_list(lst, cdr=base.null()):
     result = cdr
     for item in reversed(lst):
         result = base.cons(item, result)

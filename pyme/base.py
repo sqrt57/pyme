@@ -8,7 +8,11 @@ def pairp(obj):
 
 
 def nullp(obj):
-    return obj is None
+    return isinstance(obj, types.EmptyList)
+
+
+def null():
+    return types.EmptyList.instance
 
 
 def listp(obj):

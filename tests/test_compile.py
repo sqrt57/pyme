@@ -48,7 +48,7 @@ class TestCompile(unittest.TestCase):
 
     def test_call(self):
         symbol_table = types.SymbolTable()
-        env = types.Environment(bindings={symbol_table["+"], None})
+        env = types.Environment(bindings={symbol_table["+"]: None})
         expr = interop.read_str("(+ 10 20)", symbol_table=symbol_table)
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([

@@ -4,6 +4,13 @@ import weakref
 from pyme import exceptions, write
 
 
+class EmptyList:
+    pass
+
+
+EmptyList.instance = EmptyList()
+
+
 class Pair:
 
     def __init__(self, car, cdr):
@@ -11,40 +18,10 @@ class Pair:
         self.cdr = cdr
 
     def write_to(self, port):
-        if (isinstance(self.car, Symbol) and self.car.name == "quote"
-                and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
-            port.write("'")
-            write.write_to(self.cdr.car, port)
-        else:
-            port.write("(")
-            write.write_to(self.car, port)
-            cur = self.cdr
-            while isinstance(cur, Pair):
-                port.write(" ")
-                write.write_to(cur.car, port)
-                cur = cur.cdr
-            if cur is not None:
-                port.write(" . ")
-                write.write_to(cur, port)
-            port.write(")")
+        return write.write_pair_to(self, port)
 
     def display_to(self, port):
-        if (isinstance(self.car, Symbol) and self.car.name == "quote"
-                and isinstance(self.cdr, Pair) and self.cdr.cdr is None):
-            port.write("'")
-            write.display_to(self.cdr.car, port)
-        else:
-            port.write("(")
-            write.display_to(self.car, port)
-            cur = self.cdr
-            while isinstance(cur, Pair):
-                port.write(" ")
-                write.display_to(cur.car, port)
-                cur = cur.cdr
-            if cur is not None:
-                port.write(" . ")
-                write.display_to(cur, port)
-            port.write(")")
+        return write.display_pair_to(self, port)
 
 
 class SymbolTable:
@@ -88,6 +65,12 @@ class Environment:
             return self.bindings[index]
         else:
             raise exceptions.IdentifierNotBoundError(str(index))
+
+    def __contains__(self, index):
+        return index in self.bindings
+
+    def get(self, index, default=None):
+        return self.bindings.get(index, None)
 
 
 class Eof:

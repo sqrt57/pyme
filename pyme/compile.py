@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 import collections
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 
 from pyme import base
 from pyme.exceptions import CompileError
@@ -10,7 +10,7 @@ from pyme import interop
 from pyme import types
 
 
-class OpCode(Enum):
+class OpCode(IntEnum):
     """Operation code."""
 
     CONST1 = auto()
@@ -21,6 +21,14 @@ class OpCode(Enum):
     DROP = auto()
     CALL1 = auto()
     CALL3 = auto()
+
+
+class Builtin(Enum):
+    """Builtins special forms.
+
+    Those special forms are treated separately by compiler.
+    """
+    IF = 'if'
 
 
 class Bytecode:
@@ -95,6 +103,8 @@ class _OpEval(_OpBase):
                 OpCode.READ_VAR1.value, None, OpCode.READ_VAR3.value)
         elif base.pairp(self.expr):
             fun = self.expr.car
+            if fun in env and isinstance(env[fun], Builtin):
+                print("Bultin special")
             args, rest = interop.from_scheme_list(self.expr.cdr)
             if not base.nullp(rest):
                 raise CompileError("Improper list in procedure call")
@@ -104,6 +114,9 @@ class _OpEval(_OpBase):
                 result.append(_OpEval(arg))
             result.append(_OpEval(fun))
             return result
+        else:
+            msg = "Bad expr for compilation: {}".format(self.expr)
+            raise CompileError(msg)
 
 
 class _OpCall(_OpBase):
