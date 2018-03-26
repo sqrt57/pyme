@@ -13,16 +13,16 @@ from pyme import types
 class OpCode(IntEnum):
     """Operation code."""
 
-    CONST1 = auto()
-    CONST3 = auto()
-    READ_VAR1 = auto()
-    READ_VAR3 = auto()
+    CONST_1 = auto()
+    CONST_3 = auto()
+    READ_VAR_1 = auto()
+    READ_VAR_3 = auto()
     RET = auto()
     DROP = auto()
-    CALL1 = auto()
-    CALL3 = auto()
+    CALL_1 = auto()
+    CALL_3 = auto()
     JUMP_IF_NOT_3 = auto()
-    JUMP3 = auto()
+    JUMP_3 = auto()
 
 
 class Bytecode:
@@ -94,12 +94,12 @@ class _OpEval(_OpBase):
             pos = bytecode.add_constant(self.expr)
             compile_shortest(
                 bytecode, pos,
-                OpCode.CONST1.value, None, OpCode.CONST3.value)
+                OpCode.CONST_1.value, None, OpCode.CONST_3.value)
         elif base.symbolp(self.expr):
             pos = bytecode.add_variable(self.expr)
             compile_shortest(
                 bytecode, pos,
-                OpCode.READ_VAR1.value, None, OpCode.READ_VAR3.value)
+                OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
         elif base.pairp(self.expr):
             fun = self.expr.car
             args, rest = interop.from_scheme_list(self.expr.cdr)
@@ -128,7 +128,7 @@ class _OpCall(_OpBase):
     def compile(self, bytecode, *, env):
         compile_shortest(
             bytecode, self.num_args,
-            OpCode.CALL1.value, None, OpCode.CALL3.value)
+            OpCode.CALL_1.value, None, OpCode.CALL_3.value)
 
 
 class _Builtin(ABC):
@@ -166,7 +166,7 @@ class _If(_Builtin):
             self.jump_addresses = jump_addresses
 
         def compile(self, bytecode, *, env):
-            bytecode.append(OpCode.JUMP3)
+            bytecode.append(OpCode.JUMP_3)
             self.jump_addresses.then_jump = bytecode.position()
             bytecode.extend(b"\x00\x00\x00")
             pos = bytecode.position().to_bytes(3, byteorder='big')

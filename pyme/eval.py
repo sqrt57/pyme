@@ -16,26 +16,26 @@ def run(bytecode, *, env):
     while True:
         instr = bytecode.code[ip]
         ip += 1
-        if instr == OpCode.CONST1.value:
+        if instr == OpCode.CONST_1.value:
             index = bytecode.code[ip]
             ip += 1
             stack.append(bytecode.constants[index])
-        elif instr == OpCode.CONST3.value:
+        elif instr == OpCode.CONST_3.value:
             index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             stack.append(bytecode.constants[index])
-        elif instr == OpCode.READ_VAR1.value:
+        elif instr == OpCode.READ_VAR_1.value:
             index = bytecode.code[ip]
             ip += 1
             stack.append(env[bytecode.variables[index]])
-        elif instr == OpCode.READ_VAR3.value:
+        elif instr == OpCode.READ_VAR_3.value:
             index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             stack.append(env[bytecode.variables[index]])
         elif instr == OpCode.RET.value:
             assert len(stack) == 1
             return stack[0]
-        elif instr == OpCode.CALL1.value:
+        elif instr == OpCode.CALL_1.value:
             num_args = bytecode.code[ip]
             ip += 1
             fun = stack[-num_args-1]
@@ -43,7 +43,7 @@ def run(bytecode, *, env):
             stack = stack[:-num_args-1]
             result = fun(*args)
             stack.append(result)
-        elif instr == OpCode.CALL3.value:
+        elif instr == OpCode.CALL_3.value:
             num_args = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             fun = stack[-num_args-1]
@@ -57,7 +57,7 @@ def run(bytecode, *, env):
             condition = stack.pop()
             if base.is_false(condition):
                 ip = new_pos
-        elif instr == OpCode.JUMP3.value:
+        elif instr == OpCode.JUMP_3.value:
             new_pos = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip = new_pos
         else:

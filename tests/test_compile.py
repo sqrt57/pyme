@@ -33,7 +33,7 @@ class TestCompile(unittest.TestCase):
         expr = interop.read_str("123456")
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
-            OpCode.CONST1.value, 0,
+            OpCode.CONST_1.value, 0,
             OpCode.RET.value]))
         self.assertEqual(result.constants, [123456])
 
@@ -42,7 +42,7 @@ class TestCompile(unittest.TestCase):
         expr = interop.read_str("a")
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
-            OpCode.READ_VAR1.value, 0,
+            OpCode.READ_VAR_1.value, 0,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [expr])
 
@@ -52,10 +52,10 @@ class TestCompile(unittest.TestCase):
         expr = interop.read_str("(+ 10 20)", symbol_table=symbol_table)
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
-            OpCode.READ_VAR1.value, 0,
-            OpCode.CONST1.value, 0,
-            OpCode.CONST1.value, 1,
-            OpCode.CALL1.value, 2,
+            OpCode.READ_VAR_1.value, 0,
+            OpCode.CONST_1.value, 0,
+            OpCode.CONST_1.value, 1,
+            OpCode.CALL_1.value, 2,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [symbol_table["+"]])
         self.assertEqual(result.constants, [10, 20])
@@ -66,11 +66,11 @@ class TestCompile(unittest.TestCase):
         expr = interop.read_str("(if #t 3 4)", symbol_table=symbol_table)
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
-            OpCode.CONST1.value, 0,
+            OpCode.CONST_1.value, 0,
             OpCode.JUMP_IF_NOT_3.value, 0, 0, 12,
-            OpCode.CONST1.value, 1,
-            OpCode.JUMP3.value, 0, 0, 14,
-            OpCode.CONST1.value, 2,
+            OpCode.CONST_1.value, 1,
+            OpCode.JUMP_3.value, 0, 0, 14,
+            OpCode.CONST_1.value, 2,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertEqual(result.constants, [True, 3, 4])
