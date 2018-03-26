@@ -1,7 +1,7 @@
 - Compiler and evaluator:
     + constants
     + variable read
-    - Function call
+    + procedure call
     - if
     - quote
     - lambda

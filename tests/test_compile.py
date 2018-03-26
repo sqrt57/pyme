@@ -45,3 +45,17 @@ class TestCompile(unittest.TestCase):
             OpCode.READ_VAR1.value, 0,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [expr])
+
+    def test_call(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={symbol_table["+"], None})
+        expr = interop.read_str("(+ 10 20)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.READ_VAR1.value, 0,
+            OpCode.CONST1.value, 0,
+            OpCode.CONST1.value, 1,
+            OpCode.CALL1.value, 2,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [symbol_table["+"]])
+        self.assertEqual(result.constants, [10, 20])

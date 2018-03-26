@@ -37,5 +37,12 @@ def plus(*objs):
     return sum(objs)
 
 
+def minus(z, *zs):
+    if zs:
+        return z - sum(zs)
+    else:
+        return -z
+
+
 def cons(x, y):
     return types.Pair(x, y)

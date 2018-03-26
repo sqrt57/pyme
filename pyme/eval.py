@@ -33,7 +33,24 @@ def run(bytecode, *, env):
             ip += 3
             stack.append(env[bytecode.variables[index]])
         elif instr == OpCode.RET.value:
-            return stack[-1]
+            assert len(stack) == 1
+            return stack[0]
+        elif instr == OpCode.CALL1.value:
+            num_args = bytecode.code[ip]
+            ip += 1
+            fun = stack[-num_args-1]
+            args = stack[-num_args:]
+            stack = stack[:-num_args-1]
+            result = fun(*args)
+            stack.append(result)
+        elif instr == OpCode.CALL3.value:
+            num_args = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip += 3
+            fun = stack[-num_args-1]
+            args = stack[-num_args:]
+            stack = stack[:-num_args-1]
+            result = fun(*args)
+            stack.append(result)
         else:
             raise EvalError("Unknown bytecode: 0x{:02x}".format(instr))
 

@@ -1,9 +1,12 @@
 """Compiler from Scheme source to bytecode."""
 
+from abc import ABC, abstractmethod
+import collections
 from enum import Enum, auto
 
 from pyme import base
 from pyme.exceptions import CompileError
+from pyme import interop
 from pyme import types
 
 
@@ -16,6 +19,8 @@ class OpCode(Enum):
     READ_VAR3 = auto()
     RET = auto()
     DROP = auto()
+    CALL1 = auto()
+    CALL3 = auto()
 
 
 class Bytecode:
@@ -66,20 +71,50 @@ def compile_shortest(bytecode, arg, *opcodes):
     raise CompileError("Cannot compile opcode - argument too big")
 
 
-def compile_expr(bytecode, expr, *, env):
-    """Compile one 'expr' to 'bytecode' in environment 'env'."""
-    if base.numberp(expr) or base.stringp(expr):
-        pos = bytecode.add_constant(expr)
-        compile_shortest(
-            bytecode, pos,
-            OpCode.CONST1.value, None, OpCode.CONST3.value)
-    elif base.symbolp(expr):
-        pos = bytecode.add_variable(expr)
-        compile_shortest(
-            bytecode, pos,
-            OpCode.READ_VAR1.value, None, OpCode.READ_VAR1.value)
-    elif base.pairp(expr):
+class _OpBase(ABC):
+
+    def compile(self, bytecode, *, env):
         pass
+
+
+class _OpEval(_OpBase):
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def compile(self, bytecode, *, env):
+        if base.numberp(self.expr) or base.stringp(self.expr):
+            pos = bytecode.add_constant(self.expr)
+            compile_shortest(
+                bytecode, pos,
+                OpCode.CONST1.value, None, OpCode.CONST3.value)
+        elif base.symbolp(self.expr):
+            pos = bytecode.add_variable(self.expr)
+            compile_shortest(
+                bytecode, pos,
+                OpCode.READ_VAR1.value, None, OpCode.READ_VAR3.value)
+        elif base.pairp(self.expr):
+            fun = self.expr.car
+            args, rest = interop.from_scheme_list(self.expr.cdr)
+            if not base.nullp(rest):
+                raise CompileError("Improper list in procedure call")
+            result = []
+            result.append(_OpCall(len(args)))
+            for arg in reversed(args):
+                result.append(_OpEval(arg))
+            result.append(_OpEval(fun))
+            return result
+
+
+class _OpCall(_OpBase):
+
+    def __init__(self, num_args):
+        self.num_args = num_args
+
+    def compile(self, bytecode, *, env):
+        compile_shortest(
+            bytecode, self.num_args,
+            OpCode.CALL1.value, None, OpCode.CALL3.value)
 
 
 def compile(exprs, *, env):
@@ -96,6 +131,11 @@ def compile(exprs, *, env):
             first = False
         else:
             bytecode.append(OpCode.DROP.value)
-        compile_expr(bytecode, expr, env=env)
+        stack = [_OpEval(expr)]
+        while stack:
+            op = stack.pop()
+            new_ops = op.compile(bytecode, env=env)
+            if new_ops:
+                stack.extend(new_ops)
     bytecode.append(OpCode.RET.value)
     return bytecode
