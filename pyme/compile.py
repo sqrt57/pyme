@@ -196,6 +196,16 @@ class _If(_Builtin):
         ]
 
 
+class _Quote(_Builtin):
+
+    def compile(self, bytecode, args, *, env):
+        expr, = args
+        pos = bytecode.add_constant(expr)
+        compile_shortest(
+            bytecode, pos,
+            OpCode.CONST_1.value, None, OpCode.CONST_3.value)
+
+
 def compile(exprs, *, env):
     """Compile exprs to Bytecode.
 
@@ -222,3 +232,4 @@ def compile(exprs, *, env):
 
 class Builtins:
     IF = _If()
+    QUOTE = _Quote()

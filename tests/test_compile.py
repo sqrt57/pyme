@@ -74,3 +74,15 @@ class TestCompile(unittest.TestCase):
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertEqual(result.constants, [True, 3, 4])
+
+    def test_quote(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["quote"]: Builtins.QUOTE})
+        expr = interop.read_str("'a", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [])
+        self.assertEqual(result.constants, [symbol_table["a"]])

@@ -74,10 +74,10 @@ class TestEval(unittest.TestCase):
         result = eval.eval([expr], env=env)
         self.assertEqual(result, 3)
 
-    @unittest.skip
     def test_quote(self):
         symbol_table = types.SymbolTable()
-        env = types.Environment(bindings={symbol_table["quote"]: eval.quote})
+        env = types.Environment(
+            bindings={symbol_table["quote"]: Builtins.QUOTE})
         expr = interop.read_str("'abc", symbol_table=symbol_table)
         result = eval.eval([expr], env=env)
         self.assertEqual(result, symbol_table["abc"])
