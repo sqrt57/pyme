@@ -37,6 +37,18 @@ def stringp(obj):
     return isinstance(obj, str)
 
 
+def booleanp(obj):
+    return isinstance(obj, bool)
+
+
+def is_false(obj):
+    return obj is False
+
+
+def is_true(obj):
+    return obj is not False
+
+
 def plus(*objs):
     return sum(objs)
 

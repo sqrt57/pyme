@@ -1,6 +1,11 @@
 import unittest
 
-from pyme import eval, interop, base, reader, types
+from pyme.compile import Builtins
+from pyme import eval
+from pyme import interop
+from pyme import base
+from pyme import reader
+from pyme import types
 
 
 class TestEval(unittest.TestCase):
@@ -55,18 +60,16 @@ class TestEval(unittest.TestCase):
         result = eval.eval([expr], env=env)
         self.assertEqual(result, n)
 
-    @unittest.skip
     def test_if_true(self):
         symbol_table = types.SymbolTable()
-        env = types.Environment(bindings={symbol_table["if"]: eval.scheme_if})
+        env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if 1 2 3)", symbol_table=symbol_table)
         result = eval.eval([expr], env=env)
         self.assertEqual(result, 2)
 
-    @unittest.skip
     def test_if_false(self):
         symbol_table = types.SymbolTable()
-        env = types.Environment(bindings={symbol_table["if"]: eval.scheme_if})
+        env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if #f 2 3)", symbol_table=symbol_table)
         result = eval.eval([expr], env=env)
         self.assertEqual(result, 3)

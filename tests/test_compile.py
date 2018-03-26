@@ -5,7 +5,7 @@ from pyme import exceptions
 from pyme import interop
 from pyme import reader
 from pyme import types
-from pyme.compile import compile, compile_shortest, OpCode, Bytecode
+from pyme.compile import compile, compile_shortest, OpCode, Bytecode, Builtins
 
 
 class TestCompile(unittest.TestCase):
@@ -59,3 +59,18 @@ class TestCompile(unittest.TestCase):
             OpCode.RET.value]))
         self.assertEqual(result.variables, [symbol_table["+"]])
         self.assertEqual(result.constants, [10, 20])
+
+    def test_if(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
+        expr = interop.read_str("(if #t 3 4)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST1.value, 0,
+            OpCode.JUMP_IF_NOT_3.value, 0, 0, 12,
+            OpCode.CONST1.value, 1,
+            OpCode.JUMP3.value, 0, 0, 14,
+            OpCode.CONST1.value, 2,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [])
+        self.assertEqual(result.constants, [True, 3, 4])

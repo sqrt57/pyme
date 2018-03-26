@@ -21,14 +21,8 @@ class OpCode(IntEnum):
     DROP = auto()
     CALL1 = auto()
     CALL3 = auto()
-
-
-class Builtin(Enum):
-    """Builtins special forms.
-
-    Those special forms are treated separately by compiler.
-    """
-    IF = 'if'
+    JUMP_IF_NOT_3 = auto()
+    JUMP3 = auto()
 
 
 class Bytecode:
@@ -42,6 +36,9 @@ class Bytecode:
 
     def append(self, byte):
         self.code.append(byte)
+
+    def position(self):
+        return len(self.code)
 
     def extend(self, bytes_):
         self.code.extend(bytes_)
@@ -81,6 +78,7 @@ def compile_shortest(bytecode, arg, *opcodes):
 
 class _OpBase(ABC):
 
+    @abstractmethod
     def compile(self, bytecode, *, env):
         pass
 
@@ -91,7 +89,8 @@ class _OpEval(_OpBase):
         self.expr = expr
 
     def compile(self, bytecode, *, env):
-        if base.numberp(self.expr) or base.stringp(self.expr):
+        if (base.numberp(self.expr) or base.stringp(self.expr)
+                or base.booleanp(self.expr)):
             pos = bytecode.add_constant(self.expr)
             compile_shortest(
                 bytecode, pos,
@@ -103,17 +102,19 @@ class _OpEval(_OpBase):
                 OpCode.READ_VAR1.value, None, OpCode.READ_VAR3.value)
         elif base.pairp(self.expr):
             fun = self.expr.car
-            if fun in env and isinstance(env[fun], Builtin):
-                print("Bultin special")
             args, rest = interop.from_scheme_list(self.expr.cdr)
             if not base.nullp(rest):
                 raise CompileError("Improper list in procedure call")
-            result = []
-            result.append(_OpCall(len(args)))
-            for arg in reversed(args):
-                result.append(_OpEval(arg))
-            result.append(_OpEval(fun))
-            return result
+            fun_binding = env.get(fun)
+            if isinstance(fun_binding, _Builtin):
+                return fun_binding.compile(bytecode, args, env=env)
+            else:
+                result = []
+                result.append(_OpEval(fun))
+                for arg in args:
+                    result.append(_OpEval(arg))
+                result.append(_OpCall(len(args)))
+                return result
         else:
             msg = "Bad expr for compilation: {}".format(self.expr)
             raise CompileError(msg)
@@ -128,6 +129,71 @@ class _OpCall(_OpBase):
         compile_shortest(
             bytecode, self.num_args,
             OpCode.CALL1.value, None, OpCode.CALL3.value)
+
+
+class _Builtin(ABC):
+    """Builtins special forms.
+
+    Those special forms are treated separately by compiler.
+    """
+
+    @abstractmethod
+    def compile(self, bytecode, args, *, env):
+        pass
+
+
+class _If(_Builtin):
+
+    class JumpAddresses:
+
+        def __init__(self):
+            self.if_jump = None
+            self.then_jump = None
+
+    class CheckCondition(_OpBase):
+
+        def __init__(self, jump_addresses):
+            self.jump_addresses = jump_addresses
+
+        def compile(self, bytecode, *, env):
+            bytecode.append(OpCode.JUMP_IF_NOT_3)
+            self.jump_addresses.if_jump = bytecode.position()
+            bytecode.extend(b"\x00\x00\x00")
+
+    class AfterThen(_OpBase):
+
+        def __init__(self, jump_addresses):
+            self.jump_addresses = jump_addresses
+
+        def compile(self, bytecode, *, env):
+            bytecode.append(OpCode.JUMP3)
+            self.jump_addresses.then_jump = bytecode.position()
+            bytecode.extend(b"\x00\x00\x00")
+            pos = bytecode.position().to_bytes(3, byteorder='big')
+            if_jump = self.jump_addresses.if_jump
+            bytecode.code[if_jump:if_jump+3] = pos
+
+    class AfterElse(_OpBase):
+
+        def __init__(self, jump_addresses):
+            self.jump_addresses = jump_addresses
+
+        def compile(self, bytecode, *, env):
+            pos = bytecode.position().to_bytes(3, byteorder='big')
+            then_jump = self.jump_addresses.then_jump
+            bytecode.code[then_jump:then_jump+3] = pos
+
+    def compile(self, bytecode, args, *, env):
+        if_, then_, else_ = args
+        jump_addresses = self.JumpAddresses()
+        return [
+            _OpEval(if_),
+            self.CheckCondition(jump_addresses),
+            _OpEval(then_),
+            self.AfterThen(jump_addresses),
+            _OpEval(else_),
+            self.AfterElse(jump_addresses),
+        ]
 
 
 def compile(exprs, *, env):
@@ -149,6 +215,10 @@ def compile(exprs, *, env):
             op = stack.pop()
             new_ops = op.compile(bytecode, env=env)
             if new_ops:
-                stack.extend(new_ops)
+                stack.extend(reversed(new_ops))
     bytecode.append(OpCode.RET.value)
     return bytecode
+
+
+class Builtins:
+    IF = _If()

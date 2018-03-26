@@ -51,6 +51,15 @@ def run(bytecode, *, env):
             stack = stack[:-num_args-1]
             result = fun(*args)
             stack.append(result)
+        elif instr == OpCode.JUMP_IF_NOT_3.value:
+            new_pos = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip += 3
+            condition = stack.pop()
+            if base.is_false(condition):
+                ip = new_pos
+        elif instr == OpCode.JUMP3.value:
+            new_pos = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip = new_pos
         else:
             raise EvalError("Unknown bytecode: 0x{:02x}".format(instr))
 
