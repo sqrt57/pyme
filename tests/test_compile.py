@@ -36,3 +36,12 @@ class TestCompile(unittest.TestCase):
             OpCode.CONST1.value, 0,
             OpCode.RET.value]))
         self.assertEqual(result.constants, [123456])
+
+    def test_var(self):
+        env = types.Environment()
+        expr = interop.read_str("a")
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.READ_VAR1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [expr])

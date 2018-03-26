@@ -24,6 +24,14 @@ def run(bytecode, *, env):
             index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             stack.append(bytecode.constants[index])
+        elif instr == OpCode.READ_VAR1.value:
+            index = bytecode.code[ip]
+            ip += 1
+            stack.append(env[bytecode.variables[index]])
+        elif instr == OpCode.READ_VAR3.value:
+            index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip += 3
+            stack.append(env[bytecode.variables[index]])
         elif instr == OpCode.RET.value:
             return stack[-1]
         else:

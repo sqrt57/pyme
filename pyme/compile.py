@@ -25,6 +25,7 @@ class Bytecode:
         """Create empty bytecode."""
         self.code = bytearray()
         self.constants = []
+        self.variables = []
 
     def append(self, byte):
         self.code.append(byte)
@@ -35,6 +36,11 @@ class Bytecode:
     def add_constant(self, value):
         pos = len(self.constants)
         self.constants.append(value)
+        return pos
+
+    def add_variable(self, value):
+        pos = len(self.variables)
+        self.variables.append(value)
         return pos
 
 
@@ -64,10 +70,14 @@ def compile_expr(bytecode, expr, *, env):
     """Compile one 'expr' to 'bytecode' in environment 'env'."""
     if base.numberp(expr) or base.stringp(expr):
         pos = bytecode.add_constant(expr)
-        compile_shortest(bytecode, pos,
-                         OpCode.CONST1.value, None, OpCode.CONST3.value)
+        compile_shortest(
+            bytecode, pos,
+            OpCode.CONST1.value, None, OpCode.CONST3.value)
     elif base.symbolp(expr):
-        pass
+        pos = bytecode.add_variable(expr)
+        compile_shortest(
+            bytecode, pos,
+            OpCode.READ_VAR1.value, None, OpCode.READ_VAR1.value)
     elif base.pairp(expr):
         pass
 

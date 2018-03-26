@@ -1,6 +1,6 @@
 - Compiler and evaluator:
     + constants
-    - variable read
+    + variable read
     - Function call
     - if
     - quote
