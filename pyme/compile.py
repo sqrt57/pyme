@@ -54,6 +54,15 @@ class Bytecode:
         return pos
 
 
+class _Builtin:
+
+    def __init__(self, proc):
+        self.proc = proc
+
+    def compile(self, compiler, *args):
+        return self.proc(compiler, *args)
+
+
 class Compiler:
 
     def __init__(self, *, env):
@@ -94,15 +103,15 @@ class Compiler:
             OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
 
     def compile_call(self, expr):
-        fun = expr.car
+        proc = expr.car
         args, rest = interop.from_scheme_list(expr.cdr)
         if not base.nullp(rest):
             raise CompileError("Improper list in procedure call")
-        fun_binding = self.env.get(fun)
-        if isinstance(fun_binding, _Builtin):
-            return fun_binding.compile(self, *args)
+        proc_binding = self.env.get(proc)
+        if isinstance(proc_binding, _Builtin):
+            return proc_binding.compile(self, *args)
         else:
-            self.compile_expr(fun)
+            self.compile_expr(proc)
             for arg in args:
                 self.compile_expr(arg)
             self.compile_apply(len(args))
@@ -138,45 +147,22 @@ class Compiler:
             self.compile_expr(expr)
         self.bytecode.append(OpCode.RET.value)
 
+    def compile_if(self, if_, then_, else_):
+        self.compile_expr(if_)
+        self.bytecode.append(OpCode.JUMP_IF_NOT_3)
+        if_addr = self.bytecode.position()
+        self.bytecode.extend(b"\x00\x00\x00")
 
-class _Builtin(ABC):
-    """Builtins special forms.
+        self.compile_expr(then_)
+        self.bytecode.append(OpCode.JUMP_3)
+        then_addr = self.bytecode.position()
+        self.bytecode.extend(b"\x00\x00\x00")
+        pos = self.bytecode.position().to_bytes(3, byteorder='big')
+        self.bytecode.code[if_addr:if_addr+3] = pos
 
-    Those special forms are treated separately by compiler.
-    """
-
-    @abstractmethod
-    def compile(self, compiler, *args):
-        pass
-
-
-class _If(_Builtin):
-
-    def compile(self, compiler, if_, then_, else_):
-        compiler.compile_expr(if_)
-        compiler.bytecode.append(OpCode.JUMP_IF_NOT_3)
-        if_addr = compiler.bytecode.position()
-        compiler.bytecode.extend(b"\x00\x00\x00")
-
-        compiler.compile_expr(then_)
-        compiler.bytecode.append(OpCode.JUMP_3)
-        then_addr = compiler.bytecode.position()
-        compiler.bytecode.extend(b"\x00\x00\x00")
-        pos = compiler.bytecode.position().to_bytes(3, byteorder='big')
-        compiler.bytecode.code[if_addr:if_addr+3] = pos
-
-        compiler.compile_expr(else_)
-        pos = compiler.bytecode.position().to_bytes(3, byteorder='big')
-        compiler.bytecode.code[then_addr:then_addr+3] = pos
-
-
-class _Quote(_Builtin):
-
-    def compile(self, compiler, expr):
-        pos = compiler.bytecode.add_constant(expr)
-        compiler.compile_shortest(
-            pos,
-            OpCode.CONST_1.value, None, OpCode.CONST_3.value)
+        self.compile_expr(else_)
+        pos = self.bytecode.position().to_bytes(3, byteorder='big')
+        self.bytecode.code[then_addr:then_addr+3] = pos
 
 
 def compile(exprs, *, env):
@@ -192,5 +178,6 @@ def compile(exprs, *, env):
 
 
 class Builtins:
-    IF = _If()
-    QUOTE = _Quote()
+
+    IF = _Builtin(Compiler.compile_if)
+    QUOTE = _Builtin(Compiler.compile_const)
