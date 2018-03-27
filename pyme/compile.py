@@ -54,81 +54,89 @@ class Bytecode:
         return pos
 
 
-def compile_shortest(bytecode, arg, *opcodes):
-    """Compile shortest form of opcode with argument.
+class Compiler:
 
-    Compile shortest variant of opcode to 'bytecode'.
-    'arg' is integer argument to bytecode.
-    'opcodes' are opcode variants for different arg sizes:
-    opcodes=[op1, op2, op3, ...], where op1 has 1-byte argument,
-    op2 has 2-bytes argument, etc. If opn is None then we don't have
-    n-bytes opcode variant, we next shortest variant.
-    """
-    for n in range(len(opcodes)):
-        if opcodes[n] is not None:
-            try:
-                arg_bytes = arg.to_bytes(n+1, byteorder='big')
-                bytecode.append(opcodes[n])
-                bytecode.extend(arg_bytes)
-                return
-            except OverflowError:
-                pass
-    raise CompileError("Cannot compile opcode - argument too big")
+    def __init__(self, *, env):
+        self.env = env
+        self.bytecode = Bytecode()
 
+    def compile_shortest(self, arg, *opcodes):
+        """Compile shortest form of opcode with argument.
 
-class _OpBase(ABC):
+        Compile shortest variant of opcode to 'bytecode'.
+        'arg' is integer argument to bytecode.
+        'opcodes' are opcode variants for different arg sizes:
+        opcodes=[op1, op2, op3, ...], where op1 has 1-byte argument,
+        op2 has 2-bytes argument, etc. If opn is None then we don't have
+        n-bytes opcode variant, we next shortest variant.
+        """
+        for n in range(len(opcodes)):
+            if opcodes[n] is not None:
+                try:
+                    arg_bytes = arg.to_bytes(n+1, byteorder='big')
+                    self.bytecode.append(opcodes[n])
+                    self.bytecode.extend(arg_bytes)
+                    return
+                except OverflowError:
+                    pass
+        raise CompileError("Cannot compile opcode - argument too big")
 
-    @abstractmethod
-    def compile(self, bytecode, *, env):
-        pass
+    def compile_const(self, expr):
+        pos = self.bytecode.add_constant(expr)
+        self.compile_shortest(
+            pos,
+            OpCode.CONST_1.value, None, OpCode.CONST_3.value)
 
+    def compile_variable(self, expr):
+        pos = self.bytecode.add_variable(expr)
+        self.compile_shortest(
+            pos,
+            OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
 
-class _OpEval(_OpBase):
-
-    def __init__(self, expr):
-        self.expr = expr
-
-    def compile(self, bytecode, *, env):
-        if (base.numberp(self.expr) or base.stringp(self.expr)
-                or base.booleanp(self.expr)):
-            pos = bytecode.add_constant(self.expr)
-            compile_shortest(
-                bytecode, pos,
-                OpCode.CONST_1.value, None, OpCode.CONST_3.value)
-        elif base.symbolp(self.expr):
-            pos = bytecode.add_variable(self.expr)
-            compile_shortest(
-                bytecode, pos,
-                OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
-        elif base.pairp(self.expr):
-            fun = self.expr.car
-            args, rest = interop.from_scheme_list(self.expr.cdr)
-            if not base.nullp(rest):
-                raise CompileError("Improper list in procedure call")
-            fun_binding = env.get(fun)
-            if isinstance(fun_binding, _Builtin):
-                return fun_binding.compile(bytecode, args, env=env)
-            else:
-                result = []
-                result.append(_OpEval(fun))
-                for arg in args:
-                    result.append(_OpEval(arg))
-                result.append(_OpCall(len(args)))
-                return result
+    def compile_call(self, expr):
+        fun = expr.car
+        args, rest = interop.from_scheme_list(expr.cdr)
+        if not base.nullp(rest):
+            raise CompileError("Improper list in procedure call")
+        fun_binding = self.env.get(fun)
+        if isinstance(fun_binding, _Builtin):
+            return fun_binding.compile(self, *args)
         else:
-            msg = "Bad expr for compilation: {}".format(self.expr)
+            self.compile_expr(fun)
+            for arg in args:
+                self.compile_expr(arg)
+            self.compile_apply(len(args))
+
+    def compile_expr(self, expr):
+        if (base.numberp(expr) or base.stringp(expr)
+                or base.booleanp(expr)):
+            self.compile_const(expr)
+        elif base.symbolp(expr):
+            self.compile_variable(expr)
+        elif base.pairp(expr):
+            self.compile_call(expr)
+        else:
+            msg = "Bad expr for compilation: {}".format(expr)
             raise CompileError(msg)
 
-
-class _OpCall(_OpBase):
-
-    def __init__(self, num_args):
-        self.num_args = num_args
-
-    def compile(self, bytecode, *, env):
-        compile_shortest(
-            bytecode, self.num_args,
+    def compile_apply(self, num_args):
+        self.compile_shortest(
+            num_args,
             OpCode.CALL_1.value, None, OpCode.CALL_3.value)
+
+    def compile_block(self, exprs):
+        """Compile exprs to Bytecode.
+
+        'exprs' is a list of expressions to compile.
+        """
+        first = True
+        for expr in exprs:
+            if first:
+                first = False
+            else:
+                self.bytecode.append(OpCode.DROP.value)
+            self.compile_expr(expr)
+        self.bytecode.append(OpCode.RET.value)
 
 
 class _Builtin(ABC):
@@ -138,71 +146,36 @@ class _Builtin(ABC):
     """
 
     @abstractmethod
-    def compile(self, bytecode, args, *, env):
+    def compile(self, compiler, *args):
         pass
 
 
 class _If(_Builtin):
 
-    class JumpAddresses:
+    def compile(self, compiler, if_, then_, else_):
+        compiler.compile_expr(if_)
+        compiler.bytecode.append(OpCode.JUMP_IF_NOT_3)
+        if_addr = compiler.bytecode.position()
+        compiler.bytecode.extend(b"\x00\x00\x00")
 
-        def __init__(self):
-            self.if_jump = None
-            self.then_jump = None
+        compiler.compile_expr(then_)
+        compiler.bytecode.append(OpCode.JUMP_3)
+        then_addr = compiler.bytecode.position()
+        compiler.bytecode.extend(b"\x00\x00\x00")
+        pos = compiler.bytecode.position().to_bytes(3, byteorder='big')
+        compiler.bytecode.code[if_addr:if_addr+3] = pos
 
-    class CheckCondition(_OpBase):
-
-        def __init__(self, jump_addresses):
-            self.jump_addresses = jump_addresses
-
-        def compile(self, bytecode, *, env):
-            bytecode.append(OpCode.JUMP_IF_NOT_3)
-            self.jump_addresses.if_jump = bytecode.position()
-            bytecode.extend(b"\x00\x00\x00")
-
-    class AfterThen(_OpBase):
-
-        def __init__(self, jump_addresses):
-            self.jump_addresses = jump_addresses
-
-        def compile(self, bytecode, *, env):
-            bytecode.append(OpCode.JUMP_3)
-            self.jump_addresses.then_jump = bytecode.position()
-            bytecode.extend(b"\x00\x00\x00")
-            pos = bytecode.position().to_bytes(3, byteorder='big')
-            if_jump = self.jump_addresses.if_jump
-            bytecode.code[if_jump:if_jump+3] = pos
-
-    class AfterElse(_OpBase):
-
-        def __init__(self, jump_addresses):
-            self.jump_addresses = jump_addresses
-
-        def compile(self, bytecode, *, env):
-            pos = bytecode.position().to_bytes(3, byteorder='big')
-            then_jump = self.jump_addresses.then_jump
-            bytecode.code[then_jump:then_jump+3] = pos
-
-    def compile(self, bytecode, args, *, env):
-        if_, then_, else_ = args
-        jump_addresses = self.JumpAddresses()
-        return [
-            _OpEval(if_),
-            self.CheckCondition(jump_addresses),
-            _OpEval(then_),
-            self.AfterThen(jump_addresses),
-            _OpEval(else_),
-            self.AfterElse(jump_addresses),
-        ]
+        compiler.compile_expr(else_)
+        pos = compiler.bytecode.position().to_bytes(3, byteorder='big')
+        compiler.bytecode.code[then_addr:then_addr+3] = pos
 
 
 class _Quote(_Builtin):
 
-    def compile(self, bytecode, args, *, env):
-        expr, = args
-        pos = bytecode.add_constant(expr)
-        compile_shortest(
-            bytecode, pos,
+    def compile(self, compiler, expr):
+        pos = compiler.bytecode.add_constant(expr)
+        compiler.compile_shortest(
+            pos,
             OpCode.CONST_1.value, None, OpCode.CONST_3.value)
 
 
@@ -213,21 +186,9 @@ def compile(exprs, *, env):
 
     Use 'env' to resolve special forms while compiling exprssions.
     """
-    bytecode = Bytecode()
-    first = True
-    for expr in exprs:
-        if first:
-            first = False
-        else:
-            bytecode.append(OpCode.DROP.value)
-        stack = [_OpEval(expr)]
-        while stack:
-            op = stack.pop()
-            new_ops = op.compile(bytecode, env=env)
-            if new_ops:
-                stack.extend(reversed(new_ops))
-    bytecode.append(OpCode.RET.value)
-    return bytecode
+    compiler = Compiler(env=env)
+    compiler.compile_block(exprs)
+    return compiler.bytecode
 
 
 class Builtins:

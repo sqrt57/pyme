@@ -5,7 +5,7 @@ from pyme import exceptions
 from pyme import interop
 from pyme import reader
 from pyme import types
-from pyme.compile import compile, compile_shortest, OpCode, Bytecode, Builtins
+from pyme.compile import compile, OpCode, Compiler, Builtins
 
 
 class TestCompile(unittest.TestCase):
@@ -14,19 +14,19 @@ class TestCompile(unittest.TestCase):
         pass
 
     def test_opcode_1(self):
-        bytecode = Bytecode()
-        compile_shortest(bytecode, 0x45, 1, 2)
-        self.assertEqual(bytes(bytecode.code), b"\x01\x45")
+        compiler = Compiler(env=None)
+        compiler.compile_shortest(0x45, 1, 2)
+        self.assertEqual(bytes(compiler.bytecode.code), b"\x01\x45")
 
     def test_opcode_3(self):
-        bytecode = Bytecode()
-        compile_shortest(bytecode, 0x1122, 1, None, 3)
-        self.assertEqual(bytes(bytecode.code), b"\x03\x00\x11\x22")
+        compiler = Compiler(env=None)
+        compiler.compile_shortest(0x1122, 1, None, 3)
+        self.assertEqual(bytes(compiler.bytecode.code), b"\x03\x00\x11\x22")
 
     def test_opcode_exception(self):
-        bytecode = Bytecode()
+        compiler = Compiler(env=None)
         with self.assertRaises(exceptions.CompileError):
-            compile_shortest(bytecode, 0x1122, 1)
+            compiler.compile_shortest(0x1122, 1)
 
     def test_const(self):
         env = types.Environment()

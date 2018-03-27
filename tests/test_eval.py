@@ -51,7 +51,11 @@ class TestEval(unittest.TestCase):
         self.assertEqual(result, n)
 
     def test_deep_recursive(self):
-        n = 1000
+        """Deep enough so that constants don't fit in 1 byte.
+
+        Not deep enough to overflow Python stack.
+        """
+        n = 300
         expr = 0
         plus = types.Symbol("+")
         for _ in range(n):
