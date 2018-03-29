@@ -1,7 +1,13 @@
 import io
 import unittest
 
-from pyme import base, exceptions, ports, reader, types, write
+from pyme import base
+from pyme import exceptions
+from pyme import interop
+from pyme import ports
+from pyme import reader
+from pyme import types
+from pyme import write
 
 
 class TestReader(unittest.TestCase):
@@ -142,6 +148,12 @@ class TestReader(unittest.TestCase):
         result1 = self.reader.read(in_port)
         result2 = self.reader.read(in_port)
         self.assertIs(result1, result2.car)
+
+    @unittest.skip
+    def test_dot_list(self):
+        in_port = ports.TextStreamPort(io.StringIO("(1 . 2)"))
+        result = self.reader.read(in_port)
+        self.assertEqual(interop.from_scheme_list(result), ([1], 2))
 
 
 class TestReaderError(unittest.TestCase):

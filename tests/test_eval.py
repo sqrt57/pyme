@@ -85,3 +85,33 @@ class TestEval(unittest.TestCase):
         expr = interop.read_str("'abc", symbol_table=symbol_table)
         result = eval.eval([expr], env=env)
         self.assertEqual(result, symbol_table["abc"])
+
+    def test_lambda(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["lambda"]: Builtins.LAMBDA})
+        expr = interop.read_str("((lambda () 1))", symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, 1)
+
+    def test_lambda_arg(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["lambda"]: Builtins.LAMBDA})
+        expr = interop.read_str("((lambda (x) x) 5)",
+                                symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, 5)
+
+    @unittest.skip
+    def test_lambda_rest(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={
+                symbol_table["lambda"]: Builtins.LAMBDA,
+                symbol_table["quote"]: Builtins.QUOTE,
+            })
+        expr = interop.read_str("((lambda (x . y) y) '(1 2 3))",
+                                symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(interop.from_scheme_list(result), ([2, 3], None))

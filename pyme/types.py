@@ -61,16 +61,28 @@ class Environment:
         self.bindings = {} if bindings is None else bindings
 
     def __getitem__(self, index):
-        if index in self.bindings:
-            return self.bindings[index]
-        else:
-            raise exceptions.IdentifierNotBoundError(str(index))
+        env = self
+        while env is not None:
+            if index in env.bindings:
+                return env.bindings[index]
+            env = env.parent
+        raise exceptions.IdentifierNotBoundError(str(index))
 
     def __contains__(self, index):
-        return index in self.bindings
+        env = self
+        while env is not None:
+            if index in env.bindings:
+                return True
+            env = env.parent
+        return False
 
     def get(self, index, default=None):
-        return self.bindings.get(index, None)
+        env = self
+        while env is not None:
+            if index in env.bindings:
+                return env.bindings[index]
+            env = env.parent
+        return default
 
 
 class Eof:

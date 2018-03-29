@@ -33,6 +33,8 @@ class Bytecode:
         self.code = bytearray()
         self.constants = []
         self.variables = []
+        self.formals = []
+        self.formals_rest = None
 
     def append(self, byte):
         self.code.append(byte)
@@ -68,6 +70,7 @@ class Compiler:
     def __init__(self, *, env):
         self.env = env
         self.bytecode = Bytecode()
+        self.outer_bytecodes = []
 
     def compile_shortest(self, arg, *opcodes):
         """Compile shortest form of opcode with argument.
@@ -164,6 +167,25 @@ class Compiler:
         pos = self.bytecode.position().to_bytes(3, byteorder='big')
         self.bytecode.code[then_addr:then_addr+3] = pos
 
+    def compile_lambda(self, formals, *body):
+        formals, formals_rest = interop.from_scheme_list(formals)
+        for f in formals:
+            if not base.symbolp(f):
+                raise CompileError("Non-symbol in lambda arguments list")
+        lambda_ = Bytecode()
+        lambda_.formals = formals
+        if base.symbolp(formals_rest):
+            lambda_.formals_rest = formals_rest
+        elif base.nullp(formals_rest):
+            lambda_.formals_rest = None
+        else:
+            raise CompileError("Non-symbol in lambda rest argument")
+        self.outer_bytecodes.append(self.bytecode)
+        self.bytecode = lambda_
+        self.compile_block(body)
+        self.bytecode = self.outer_bytecodes.pop()
+        self.compile_const(lambda_)
+
 
 def compile(exprs, *, env):
     """Compile exprs to Bytecode.
@@ -181,3 +203,4 @@ class Builtins:
 
     IF = _Builtin(Compiler.compile_if)
     QUOTE = _Builtin(Compiler.compile_const)
+    LAMBDA = _Builtin(Compiler.compile_lambda)

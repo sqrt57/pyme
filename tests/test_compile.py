@@ -5,7 +5,7 @@ from pyme import exceptions
 from pyme import interop
 from pyme import reader
 from pyme import types
-from pyme.compile import compile, OpCode, Compiler, Builtins
+from pyme.compile import Builtins, Bytecode, Compiler, OpCode, compile
 
 
 class TestCompile(unittest.TestCase):
@@ -86,3 +86,43 @@ class TestCompile(unittest.TestCase):
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertEqual(result.constants, [symbol_table["a"]])
+
+    def test_lambda(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["lambda"]: Builtins.LAMBDA})
+        expr = interop.read_str("(lambda () 4 5)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [])
+        self.assertIsInstance(result.constants[0], Bytecode)
+        self.assertEqual(result.constants[0].code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.DROP.value,
+            OpCode.CONST_1.value, 1,
+            OpCode.RET.value]))
+        self.assertEqual(result.constants[0].constants, [4, 5])
+        self.assertEqual(result.constants[0].variables, [])
+        self.assertEqual(result.constants[0].formals, [])
+        self.assertIsNone(result.constants[0].formals_rest)
+
+    def test_lambda_arg(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["lambda"]: Builtins.LAMBDA})
+        x = symbol_table["x"]
+        expr = interop.read_str("(lambda (x) x)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [])
+        self.assertIsInstance(result.constants[0], Bytecode)
+        self.assertEqual(result.constants[0].code, bytes([
+            OpCode.READ_VAR_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.constants[0].constants, [])
+        self.assertEqual(result.constants[0].variables, [x])
+        self.assertEqual(result.constants[0].formals, [x])
