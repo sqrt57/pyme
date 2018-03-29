@@ -149,11 +149,15 @@ class TestReader(unittest.TestCase):
         result2 = self.reader.read(in_port)
         self.assertIs(result1, result2.car)
 
-    @unittest.skip
     def test_dot_list(self):
         in_port = ports.TextStreamPort(io.StringIO("(1 . 2)"))
         result = self.reader.read(in_port)
         self.assertEqual(interop.from_scheme_list(result), ([1], 2))
+
+    def test_dot_list(self):
+        in_port = ports.TextStreamPort(io.StringIO("(. 3)"))
+        result = self.reader.read(in_port)
+        self.assertEqual(result, 3)
 
 
 class TestReaderError(unittest.TestCase):
@@ -173,5 +177,15 @@ class TestReaderError(unittest.TestCase):
 
     def test_right_bracket(self):
         in_port = ports.TextStreamPort(io.StringIO(")"))
+        with self.assertRaises(exceptions.ReaderError):
+            self.reader.read(in_port)
+
+    def test_dot(self):
+        in_port = ports.TextStreamPort(io.StringIO("."))
+        with self.assertRaises(exceptions.ReaderError):
+            self.reader.read(in_port)
+
+    def test_quote_dot(self):
+        in_port = ports.TextStreamPort(io.StringIO("'."))
         with self.assertRaises(exceptions.ReaderError):
             self.reader.read(in_port)

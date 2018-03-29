@@ -8,12 +8,19 @@ class _RightBracket:
 _RightBracket.instance = _RightBracket()
 
 
+class _Dot:
+    pass
+
+
+_Dot.instance = _Dot()
+
+
 def is_white(char):
     return char in " \n\r\t"
 
 
 def is_symbol_char(char):
-    return not char in "'\"(); \n\r\t"
+    return char not in "'\"(); \n\r\t"
 
 
 char_to_digit = {
@@ -34,6 +41,13 @@ def to_digit(char):
     return char_to_digit.get(char)
 
 
+def check_legal_object(obj):
+        if isinstance(obj, _RightBracket):
+            raise exceptions.ReaderError('Unexpected ")".')
+        if isinstance(obj, _Dot):
+            raise exceptions.ReaderError("Illegal use of `.'")
+
+
 class Reader:
 
     def __init__(self, *, symbol_table):
@@ -47,6 +61,10 @@ class Reader:
             item = self._read(port)
             if isinstance(item, _RightBracket):
                 return interop.scheme_list(result)
+            elif isinstance(item, _Dot):
+                cdr = self._read(port)
+                check_legal_object(cdr)
+                return interop.scheme_list(result, cdr=cdr)
             elif base.eofp(item):
                 raise exceptions.ReaderError('Unexpected end of file.')
             else:
@@ -75,24 +93,26 @@ class Reader:
                 port.read(1)
                 result += item
 
-    def  _parse_integer(self, string):
+    def _parse_integer(self, string):
         sign = 1
         if string[0] == "+":
             string = string[1:]
         elif string[0] == "-":
             sign = -1
             string = string[1:]
-        if len(string) == 0: return None
+        if len(string) == 0:
+            return None
         result = 0
         for char in string:
             digit = to_digit(char)
-            if digit is None: return None
+            if digit is None:
+                return None
             result = result*10 + digit
         return sign * result
 
     def _get_symbol_or_number(self, string):
         if string == ".":
-            raise exceptions.ReaderError("Illegal use of `.'")
+            return _Dot.instance
         as_integer = self._parse_integer(string)
         if as_integer is not None:
             return as_integer
@@ -100,8 +120,7 @@ class Reader:
 
     def _read_quoted(self, port):
         quoted = self._read(port)
-        if isinstance(quoted, _RightBracket):
-            raise exceptions.ReaderError('Unexpected ")".')
+        check_legal_object(quoted)
         if base.eofp(quoted):
             raise exceptions.ReaderError('Unexpected end of file.')
         return interop.scheme_list([self._symbol_table["quote"], quoted])
@@ -134,12 +153,12 @@ class Reader:
                 return char
             elif is_white(char):
                 port.read(1)
-            elif char == ';':
+            elif char == ";":
                 port.readline()
-            elif char == '(':
+            elif char == "(":
                 port.read(1)
                 return self._read_list(port)
-            elif char == ')':
+            elif char == ")":
                 port.read(1)
                 return _RightBracket.instance
             elif char == '"':
@@ -157,6 +176,5 @@ class Reader:
 
     def read(self, port):
         result = self._read(port)
-        if isinstance(result, _RightBracket):
-            raise exceptions.ReaderError('Unexpected ")".')
+        check_legal_object(result)
         return result
