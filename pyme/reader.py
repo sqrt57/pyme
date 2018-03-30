@@ -1,4 +1,6 @@
-from pyme import exceptions, interop, base
+from pyme import base
+from pyme import interop
+from pyme.exceptions import ReaderError
 
 
 class _RightBracket:
@@ -42,10 +44,10 @@ def to_digit(char):
 
 
 def check_legal_object(obj):
-        if isinstance(obj, _RightBracket):
-            raise exceptions.ReaderError('Unexpected ")".')
-        if isinstance(obj, _Dot):
-            raise exceptions.ReaderError("Illegal use of `.'")
+    if isinstance(obj, _RightBracket):
+        raise ReaderError('Unexpected ")".')
+    if isinstance(obj, _Dot):
+        raise ReaderError("Illegal use of `.'")
 
 
 class Reader:
@@ -64,9 +66,12 @@ class Reader:
             elif isinstance(item, _Dot):
                 cdr = self._read(port)
                 check_legal_object(cdr)
+                right_bracket = self._read(port)
+                if not isinstance(right_bracket, _RightBracket):
+                    raise ReaderError('")" expected')
                 return interop.scheme_list(result, cdr=cdr)
             elif base.eofp(item):
-                raise exceptions.ReaderError('Unexpected end of file.')
+                raise ReaderError('Unexpected end of file.')
             else:
                 result.append(item)
 
@@ -75,7 +80,7 @@ class Reader:
         while True:
             item = port.peek_char()
             if base.eofp(item):
-                raise exceptions.ReaderError('Unexpected end of file.')
+                raise ReaderError('Unexpected end of file.')
             elif item == '"':
                 port.read(1)
                 return result
@@ -122,29 +127,29 @@ class Reader:
         quoted = self._read(port)
         check_legal_object(quoted)
         if base.eofp(quoted):
-            raise exceptions.ReaderError('Unexpected end of file.')
+            raise ReaderError('Unexpected end of file.')
         return interop.scheme_list([self._symbol_table["quote"], quoted])
 
     def _read_special(self, port):
         char = port.peek_char()
         if base.eofp(char):
-            raise exceptions.ReaderError('Unexpected end of file.')
+            raise ReaderError('Unexpected end of file.')
         elif char == 't':
             port.read(1)
             next_char = port.peek_char()
             if not base.eofp(next_char) and is_symbol_char(next_char):
-                raise exceptions.ReaderError("Invalid hash syntax: #"
+                raise ReaderError("Invalid hash syntax: #"
                                              + char + next_char)
             return True
         elif char == 'f':
             port.read(1)
             next_char = port.peek_char()
             if not base.eofp(next_char) and is_symbol_char(next_char):
-                raise exceptions.ReaderError("Invalid hash syntax: #"
+                raise ReaderError("Invalid hash syntax: #"
                                              + char + next_char)
             return False
         else:
-            raise exceptions.ReaderError("Invalid hash syntax: #" + char)
+            raise ReaderError("Invalid hash syntax: #" + char)
 
     def _read(self, port):
         while True:

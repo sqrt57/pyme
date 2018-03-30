@@ -154,10 +154,20 @@ class TestReader(unittest.TestCase):
         result = self.reader.read(in_port)
         self.assertEqual(interop.from_scheme_list(result), ([1], 2))
 
-    def test_dot_list(self):
+    def test_empty_dot_list(self):
         in_port = ports.TextStreamPort(io.StringIO("(. 3)"))
         result = self.reader.read(in_port)
         self.assertEqual(result, 3)
+
+    def test_list_dot_list(self):
+        in_port = ports.TextStreamPort(io.StringIO("((1 . 2))"))
+        result = self.reader.read(in_port)
+        inner, rest = interop.from_scheme_list(result)
+        self.assertEqual(len(inner), 1)
+        # import pdb; pdb.set_trace()
+        # self.assertTrue(base.listp(inner[0]))
+        self.assertTrue(base.nullp(rest))
+        self.assertEqual(interop.from_scheme_list(inner[0]), ([1], 2))
 
 
 class TestReaderError(unittest.TestCase):

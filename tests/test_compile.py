@@ -126,3 +126,25 @@ class TestCompile(unittest.TestCase):
         self.assertEqual(result.constants[0].constants, [])
         self.assertEqual(result.constants[0].variables, [x])
         self.assertEqual(result.constants[0].formals, [x])
+
+    def test_lambda_rest(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["lambda"]: Builtins.LAMBDA})
+        x = symbol_table["x"]
+        y = symbol_table["y"]
+        expr = interop.read_str("(lambda (x . y) y)",
+                                symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [])
+        self.assertIsInstance(result.constants[0], Bytecode)
+        self.assertEqual(result.constants[0].code, bytes([
+            OpCode.READ_VAR_1.value, 0,
+            OpCode.RET.value]))
+        self.assertEqual(result.constants[0].constants, [])
+        self.assertEqual(result.constants[0].variables, [y])
+        self.assertEqual(result.constants[0].formals, [x])
+        self.assertEqual(result.constants[0].formals_rest, y)
