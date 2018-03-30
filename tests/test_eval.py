@@ -103,7 +103,6 @@ class TestEval(unittest.TestCase):
         result = eval.eval([expr], env=env)
         self.assertEqual(result, 5)
 
-    @unittest.skip
     def test_lambda_rest(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(
@@ -111,7 +110,9 @@ class TestEval(unittest.TestCase):
                 symbol_table["lambda"]: Builtins.LAMBDA,
                 symbol_table["quote"]: Builtins.QUOTE,
             })
-        expr = interop.read_str("((lambda (x . y) y) '(1 2 3))",
+        expr = interop.read_str("((lambda (x . y) y) 1 2 3)",
                                 symbol_table=symbol_table)
         result = eval.eval([expr], env=env)
-        self.assertEqual(interop.from_scheme_list(result), ([2, 3], None))
+        result_list, result_rest = interop.from_scheme_list(result)
+        self.assertEqual(result_list, [2, 3])
+        self.assertTrue(base.nullp(result_rest))
