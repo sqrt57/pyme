@@ -2,7 +2,17 @@
     + constants
     + variable read
     + procedure call
-    - if
-    - quote
-    - lambda
+    + if
+    + quote
+    + lambda
+    + define
+    + set!
+    - eval
+- Full interpreter
+- Tests in Scheme
+- Custom types
+- Custom reader
+- Custom compiler
+- Disassembler
+- Benchmarks
 - Make all runtime errors subclass EvalError or SchemeError

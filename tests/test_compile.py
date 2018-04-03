@@ -95,6 +95,7 @@ class TestCompile(unittest.TestCase):
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
+            OpCode.MAKE_CLOSURE.value,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertIsInstance(result.constants[0], Bytecode)
@@ -117,6 +118,7 @@ class TestCompile(unittest.TestCase):
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
+            OpCode.MAKE_CLOSURE.value,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertIsInstance(result.constants[0], Bytecode)
@@ -138,6 +140,7 @@ class TestCompile(unittest.TestCase):
         result = compile([expr], env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
+            OpCode.MAKE_CLOSURE.value,
             OpCode.RET.value]))
         self.assertEqual(result.variables, [])
         self.assertIsInstance(result.constants[0], Bytecode)
@@ -148,3 +151,33 @@ class TestCompile(unittest.TestCase):
         self.assertEqual(result.constants[0].variables, [y])
         self.assertEqual(result.constants[0].formals, [x])
         self.assertEqual(result.constants[0].formals_rest, y)
+
+    def test_define(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["define"]: Builtins.DEFINE})
+        x = symbol_table["x"]
+        expr = interop.read_str("(define x 3)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.DEFINE_1.value, 0,
+            OpCode.PUSH_FALSE.value,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [x])
+        self.assertEqual(result.constants, [3])
+
+    def test_set(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={symbol_table["set!"]: Builtins.SET})
+        x = symbol_table["x"]
+        expr = interop.read_str("(set! x 3)", symbol_table=symbol_table)
+        result = compile([expr], env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.CONST_1.value, 0,
+            OpCode.SET_VAR_1.value, 0,
+            OpCode.PUSH_FALSE.value,
+            OpCode.RET.value]))
+        self.assertEqual(result.variables, [x])
+        self.assertEqual(result.constants, [3])

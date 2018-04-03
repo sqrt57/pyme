@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 import collections
 from enum import Enum, IntEnum, auto
+import math
 
 from pyme import base
 from pyme.exceptions import CompileError
@@ -23,6 +24,12 @@ class OpCode(IntEnum):
     CALL_3 = auto()
     JUMP_IF_NOT_3 = auto()
     JUMP_3 = auto()
+    DEFINE_1 = auto()
+    DEFINE_3 = auto()
+    SET_VAR_1 = auto()
+    SET_VAR_3 = auto()
+    PUSH_FALSE = auto()
+    MAKE_CLOSURE = auto()
 
 
 class Bytecode:
@@ -185,6 +192,27 @@ class Compiler:
         self.compile_block(body)
         self.bytecode = self.outer_bytecodes.pop()
         self.compile_const(lambda_)
+        self.bytecode.append(OpCode.MAKE_CLOSURE.value)
+
+    def compile_define_var(self, var, value):
+        if not base.symbolp(var):
+            raise CompileError("Non-symbol in variable definition")
+        self.compile_expr(value)
+        pos = self.bytecode.add_variable(var)
+        self.compile_shortest(
+            pos,
+            OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
+        self.bytecode.append(OpCode.PUSH_FALSE.value)
+
+    def compile_set_var(self, var, value):
+        if not base.symbolp(var):
+            raise CompileError("Non-symbol in set!")
+        self.compile_expr(value)
+        pos = self.bytecode.add_variable(var)
+        self.compile_shortest(
+            pos,
+            OpCode.SET_VAR_1.value, None, OpCode.SET_VAR_3.value)
+        self.bytecode.append(OpCode.PUSH_FALSE.value)
 
 
 def compile(exprs, *, env):
@@ -204,3 +232,54 @@ class Builtins:
     IF = _Builtin(Compiler.compile_if)
     QUOTE = _Builtin(Compiler.compile_const)
     LAMBDA = _Builtin(Compiler.compile_lambda)
+    DEFINE = _Builtin(Compiler.compile_define_var)
+    SET = _Builtin(Compiler.compile_set_var)
+
+num_args = {
+    OpCode.CONST_1: 1,
+    OpCode.CONST_3: 3,
+    OpCode.READ_VAR_1: 1,
+    OpCode.READ_VAR_3: 3,
+    OpCode.RET: 0,
+    OpCode.DROP: 0,
+    OpCode.CALL_1: 1,
+    OpCode.CALL_3: 3,
+    OpCode.JUMP_IF_NOT_3: 3,
+    OpCode.JUMP_3: 3,
+    OpCode.DEFINE_1: 1,
+    OpCode.DEFINE_3: 3,
+    OpCode.SET_VAR_1: 1,
+    OpCode.SET_VAR_3: 3,
+    OpCode.PUSH_FALSE: 0,
+    OpCode.MAKE_CLOSURE: 0,
+}
+
+def decompile_code_inner(bytecode, *, result, prefix):
+    l = math.ceil(math.log10(len(bytecode.code) + 1))
+    ip = 0
+    result.append("{0}formals = {1}".format(prefix, bytecode.formals))
+    result.append("{0}formals_rest = {1}".format(prefix, bytecode.formals_rest))
+    result.append("{0}constants = {1}".format(prefix, bytecode.constants))
+    result.append("{0}variables = {1}".format(prefix, bytecode.variables))
+    while ip < len(bytecode.code):
+        instr = OpCode(bytecode.code[ip])
+        n = num_args[instr]
+        if n > 0:
+            arg = int.from_bytes(bytecode.code[ip+1:ip+n+1], byteorder='big')
+            result.append("{0}{1:0{2}}: {3:10} {4}".format(
+                prefix, ip, l, instr.name, arg))
+            ip += n + 1
+        else:
+            result.append("{0}{1:0{2}}: {3:10}".format(
+                prefix, ip, l, instr.name))
+            ip += 1
+    result.append(prefix)
+    for i, const in enumerate(bytecode.constants):
+        if isinstance(const, Bytecode):
+            result.append("{0}constants[{1}]:".format(prefix, i))
+            decompile_code_inner(const, result=result, prefix=prefix+".   ")
+
+def decompile_code(bytecode):
+    result = [""]
+    decompile_code_inner(bytecode, result=result, prefix="")
+    return "\n".join(result)

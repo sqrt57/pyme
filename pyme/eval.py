@@ -11,6 +11,13 @@ from pyme.compile import OpCode
 from pyme.exceptions import EvalError
 
 
+class Closure:
+
+    def __init__(self, bytecode, *, env):
+        self.bytecode = bytecode
+        self.env = env
+
+
 def bind_formals(bytecode, args):
     if len(bytecode.formals) > len(args):
         raise EvalError("Not enough arguments in procedure call")
@@ -35,8 +42,10 @@ def pop_proc_args(stack, num):
     return new_stack, proc, args
 
 
-def run(bytecode, *, env):
-    """Run bytecode in environment 'env'."""
+def run(closure):
+    """Run closure in its stored environment."""
+    env = closure.env
+    bytecode = closure.bytecode
     proc_stack = []
     stack = []
     ip = 0
@@ -65,16 +74,18 @@ def run(bytecode, *, env):
             else:
                 assert len(stack) == 1
                 return stack[0]
+        elif instr == OpCode.DROP.value:
+            stack.pop()
         elif instr == OpCode.CALL_1.value:
             num_args = bytecode.code[ip]
             ip += 1
             stack, proc, args = pop_proc_args(stack, num_args)
-            if isinstance(proc, compile.Bytecode):
-                bindings = bind_formals(proc, args)
+            if isinstance(proc, Closure):
+                bindings = bind_formals(proc.bytecode, args)
                 proc_stack.append((bytecode, ip, env))
-                bytecode = proc
+                bytecode = proc.bytecode
                 ip = 0
-                env = types.Environment(parent=env, bindings=bindings)
+                env = types.Environment(parent=proc.env, bindings=bindings)
             else:
                 result = proc(*args)
                 stack.append(result)
@@ -82,12 +93,12 @@ def run(bytecode, *, env):
             num_args = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             stack, proc, args = pop_proc_args(stack, num_args)
-            if isinstance(proc, compile.Bytecode):
-                bindings = bind_formals(proc, args)
+            if isinstance(proc, Closure):
+                bindings = bind_formals(proc.bytecode, args)
                 proc_stack.append((bytecode, ip, env))
-                bytecode = proc
+                bytecode = proc.bytecode
                 ip = 0
-                env = types.Environment(parent=env, bindings=bindings)
+                env = types.Environment(parent=proc.env, bindings=bindings)
             else:
                 result = proc(*args)
                 stack.append(result)
@@ -100,6 +111,32 @@ def run(bytecode, *, env):
         elif instr == OpCode.JUMP_3.value:
             new_pos = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip = new_pos
+        elif instr == OpCode.DEFINE_1.value:
+            index = bytecode.code[ip]
+            ip += 1
+            value = stack.pop()
+            env.define(bytecode.variables[index], value)
+        elif instr == OpCode.DEFINE_3.value:
+            index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip += 3
+            value = stack.pop()
+            env.define(bytecode.variables[index], value)
+        elif instr == OpCode.SET_VAR_1.value:
+            index = bytecode.code[ip]
+            ip += 1
+            value = stack.pop()
+            env.set_(bytecode.variables[index], value)
+        elif instr == OpCode.SET_VAR_3.value:
+            index = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
+            ip += 3
+            value = stack.pop()
+            env.set_(bytecode.variables[index], value)
+        elif instr == OpCode.PUSH_FALSE.value:
+            stack.append(False)
+        elif instr == OpCode.MAKE_CLOSURE.value:
+            bytecode_const = stack.pop()
+            closure = Closure(bytecode_const, env=env)
+            stack.append(closure)
         else:
             raise EvalError("Unknown bytecode: 0x{:02x}".format(instr))
 
@@ -111,5 +148,5 @@ def eval(exprs, *, env):
     in environment 'env'.
     """
     bytecode = compile.compile(exprs, env=env)
-    result = run(bytecode, env=env)
+    result = run(Closure(bytecode, env=env))
     return result

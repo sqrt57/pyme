@@ -84,6 +84,18 @@ class Environment:
             env = env.parent
         return default
 
+    def define(self, index, value):
+        self.bindings[index] = value
+
+    def set_(self, index, value):
+        env = self
+        while env is not None:
+            if index in env.bindings:
+                env.bindings[index] = value
+                return
+            env = env.parent
+        raise exceptions.IdentifierNotBoundError(str(index))
+
 
 class Eof:
     pass

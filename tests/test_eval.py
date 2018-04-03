@@ -2,6 +2,7 @@ import unittest
 
 from pyme.compile import Builtins
 from pyme import eval
+from pyme import exceptions
 from pyme import interop
 from pyme import base
 from pyme import reader
@@ -116,3 +117,99 @@ class TestEval(unittest.TestCase):
         result_list, result_rest = interop.from_scheme_list(result)
         self.assertEqual(result_list, [2, 3])
         self.assertTrue(base.nullp(result_rest))
+
+    def test_define(self):
+        symbol_table = types.SymbolTable()
+        x = symbol_table['x']
+        env = types.Environment(
+            bindings={
+                symbol_table["define"]: Builtins.DEFINE,
+            })
+        expr = interop.read_str("(define x 5)",
+                                symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, False)
+        self.assertEqual(env[x], 5)
+
+    def test_define_set(self):
+        symbol_table = types.SymbolTable()
+        x = symbol_table['x']
+        env = types.Environment(
+            bindings={
+                symbol_table["set!"]: Builtins.SET,
+                x: 3,
+            })
+        expr = interop.read_str("(set! x 8)",
+                                symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, False)
+        self.assertEqual(env[x], 8)
+
+    def test_set_error(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(
+            bindings={
+                symbol_table["set!"]: Builtins.SET,
+            })
+        expr = interop.read_str("(set! x 8)",
+                                symbol_table=symbol_table)
+        with self.assertRaises(exceptions.IdentifierNotBoundError):
+            result = eval.eval([expr], env=env)
+
+    def test_define_local(self):
+        symbol_table = types.SymbolTable()
+        x = symbol_table['x']
+        env = types.Environment(
+            bindings={
+                symbol_table["lambda"]: Builtins.LAMBDA,
+                symbol_table["define"]: Builtins.DEFINE,
+                x: 3,
+            })
+        expr = interop.read_str(
+            """
+                ((lambda ()
+                    (define x 8)
+                    x))
+            """,
+            symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, 8)
+        self.assertEqual(env[x], 3)
+
+    def test_set_local(self):
+        symbol_table = types.SymbolTable()
+        x = symbol_table['x']
+        env = types.Environment(
+            bindings={
+                symbol_table["lambda"]: Builtins.LAMBDA,
+                symbol_table["set!"]: Builtins.SET,
+                x: 3,
+            })
+        expr = interop.read_str(
+            """
+                ((lambda ()
+                    (set! x 8)
+                    x))
+            """,
+            symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, 8)
+        self.assertEqual(env[x], 8)
+
+    def test_lexical_scope(self):
+        symbol_table = types.SymbolTable()
+        lexical = symbol_table['lexical']
+        dynamic = symbol_table['dynamic']
+        env = types.Environment(
+            bindings={
+                symbol_table["lambda"]: Builtins.LAMBDA,
+                symbol_table["quote"]: Builtins.QUOTE,
+            })
+        expr = interop.read_str(
+            """
+                ((lambda (x) (((lambda (x) (lambda () x)) 'lexical)))
+                    'dynamic)
+            """,
+            symbol_table=symbol_table)
+        result = eval.eval([expr], env=env)
+        self.assertEqual(result, lexical)

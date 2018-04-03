@@ -4,31 +4,6 @@ import unittest
 from pyme import base, interop, ports, types, write
 
 
-class TestCore(unittest.TestCase):
-
-    def test_pair(self):
-        pair = base.cons(1, 2)
-        self.assertTrue(base.pairp(pair))
-        self.assertEqual(pair.car, 1)
-        self.assertEqual(pair.cdr, 2)
-        pair.car = "hello"
-        self.assertEqual(pair.car, "hello")
-
-    def test_symbol_unique(self):
-        store = types.SymbolTable()
-        a = store['qwe']
-        b = store['qwe']
-        self.assertEqual(a, b)
-
-    def test_scheme_list(self):
-        x = interop.scheme_list([1, 2])
-        self.assertTrue(base.pairp(x))
-        self.assertEqual(x.car, 1)
-        self.assertTrue(base.pairp(x.cdr))
-        self.assertEqual(x.cdr.car, 2)
-        self.assertTrue(base.nullp(x.cdr.cdr))
-
-
 class TestWrite(unittest.TestCase):
 
     def setUp(self):
