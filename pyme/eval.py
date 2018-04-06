@@ -136,12 +136,12 @@ def run(bytecode, *, env):
             raise EvalError("Unknown bytecode: 0x{:02x}".format(instr))
 
 
-def eval(exprs, *, env):
-    """Evaluate list of scheme exprs.
+def eval(expr, *, env):
+    """Evaluate scheme expr.
 
-    Compile and execute 'exprs' - list of Scheme expressions
+    Compile and execute Scheme expression 'expr'
     in environment 'env'.
     """
-    bytecode = compile.compile(exprs, env=env)
+    bytecode = compile.compile(expr, env=env)
     result = run(bytecode, env=env)
     return result

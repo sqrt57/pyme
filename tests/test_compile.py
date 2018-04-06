@@ -31,7 +31,7 @@ class TestCompile(unittest.TestCase):
     def test_const(self):
         env = types.Environment()
         expr = interop.read_str("123456")
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.RET.value]))
@@ -40,7 +40,7 @@ class TestCompile(unittest.TestCase):
     def test_var(self):
         env = types.Environment()
         expr = interop.read_str("a")
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.READ_VAR_1.value, 0,
             OpCode.RET.value]))
@@ -50,7 +50,7 @@ class TestCompile(unittest.TestCase):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["+"]: None})
         expr = interop.read_str("(+ 10 20)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.READ_VAR_1.value, 0,
             OpCode.CONST_1.value, 0,
@@ -64,7 +64,7 @@ class TestCompile(unittest.TestCase):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if #t 3 4)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.JUMP_IF_NOT_3.value, 0, 0, 12,
@@ -80,7 +80,7 @@ class TestCompile(unittest.TestCase):
         env = types.Environment(
             bindings={symbol_table["quote"]: Builtins.QUOTE})
         expr = interop.read_str("'a", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.RET.value]))
@@ -92,7 +92,7 @@ class TestCompile(unittest.TestCase):
         env = types.Environment(
             bindings={symbol_table["lambda"]: Builtins.LAMBDA})
         expr = interop.read_str("(lambda () 4 5)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.MAKE_CLOSURE.value,
@@ -115,7 +115,7 @@ class TestCompile(unittest.TestCase):
             bindings={symbol_table["lambda"]: Builtins.LAMBDA})
         x = symbol_table["x"]
         expr = interop.read_str("(lambda (x) x)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.MAKE_CLOSURE.value,
@@ -137,7 +137,7 @@ class TestCompile(unittest.TestCase):
         y = symbol_table["y"]
         expr = interop.read_str("(lambda (x . y) y)",
                                 symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.MAKE_CLOSURE.value,
@@ -158,7 +158,7 @@ class TestCompile(unittest.TestCase):
             bindings={symbol_table["define"]: Builtins.DEFINE})
         x = symbol_table["x"]
         expr = interop.read_str("(define x 3)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.DEFINE_1.value, 0,
@@ -173,7 +173,7 @@ class TestCompile(unittest.TestCase):
             bindings={symbol_table["set!"]: Builtins.SET})
         x = symbol_table["x"]
         expr = interop.read_str("(set! x 3)", symbol_table=symbol_table)
-        result = compile([expr], env=env)
+        result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
             OpCode.SET_VAR_1.value, 0,

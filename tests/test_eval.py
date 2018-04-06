@@ -19,27 +19,27 @@ class TestEval(unittest.TestCase):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["a"]: 5})
         expr = interop.read_str("a", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 5)
 
     def test_number(self):
         env = types.Environment()
         expr = interop.read_str("3")
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 3)
 
     def test_fun_call(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["+"]: base.plus})
         expr = interop.read_str("(+ 1 2)", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 3)
 
     def test_fun_call_order(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["-"]: base.minus})
         expr = interop.read_str("(- 1 2 3)", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, -4)
 
     def test_recursive(self):
@@ -48,7 +48,7 @@ class TestEval(unittest.TestCase):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["+"]: base.plus})
         expr = interop.read_str(string, symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, n)
 
     def test_deep_recursive(self):
@@ -62,21 +62,21 @@ class TestEval(unittest.TestCase):
         for _ in range(n):
             expr = interop.scheme_list([plus, 1, expr])
         env = types.Environment(bindings={plus: base.plus})
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, n)
 
     def test_if_true(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if 1 2 3)", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 2)
 
     def test_if_false(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if #f 2 3)", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 3)
 
     def test_quote(self):
@@ -84,7 +84,7 @@ class TestEval(unittest.TestCase):
         env = types.Environment(
             bindings={symbol_table["quote"]: Builtins.QUOTE})
         expr = interop.read_str("'abc", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, symbol_table["abc"])
 
     def test_lambda(self):
@@ -92,7 +92,7 @@ class TestEval(unittest.TestCase):
         env = types.Environment(
             bindings={symbol_table["lambda"]: Builtins.LAMBDA})
         expr = interop.read_str("((lambda () 1))", symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 1)
 
     def test_lambda_arg(self):
@@ -101,7 +101,7 @@ class TestEval(unittest.TestCase):
             bindings={symbol_table["lambda"]: Builtins.LAMBDA})
         expr = interop.read_str("((lambda (x) x) 5)",
                                 symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 5)
 
     def test_lambda_rest(self):
@@ -113,7 +113,7 @@ class TestEval(unittest.TestCase):
             })
         expr = interop.read_str("((lambda (x . y) y) 1 2 3)",
                                 symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         result_list, result_rest = interop.from_scheme_list(result)
         self.assertEqual(result_list, [2, 3])
         self.assertTrue(base.nullp(result_rest))
@@ -127,7 +127,7 @@ class TestEval(unittest.TestCase):
             })
         expr = interop.read_str("(define x 5)",
                                 symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, False)
         self.assertEqual(env[x], 5)
 
@@ -141,7 +141,7 @@ class TestEval(unittest.TestCase):
             })
         expr = interop.read_str("(set! x 8)",
                                 symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, False)
         self.assertEqual(env[x], 8)
 
@@ -154,7 +154,7 @@ class TestEval(unittest.TestCase):
         expr = interop.read_str("(set! x 8)",
                                 symbol_table=symbol_table)
         with self.assertRaises(exceptions.IdentifierNotBoundError):
-            result = eval.eval([expr], env=env)
+            result = eval.eval(expr, env=env)
 
     def test_define_local(self):
         symbol_table = types.SymbolTable()
@@ -172,7 +172,7 @@ class TestEval(unittest.TestCase):
                     x))
             """,
             symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 8)
         self.assertEqual(env[x], 3)
 
@@ -192,7 +192,7 @@ class TestEval(unittest.TestCase):
                     x))
             """,
             symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, 8)
         self.assertEqual(env[x], 8)
 
@@ -211,5 +211,18 @@ class TestEval(unittest.TestCase):
                     'dynamic)
             """,
             symbol_table=symbol_table)
-        result = eval.eval([expr], env=env)
+        result = eval.eval(expr, env=env)
         self.assertEqual(result, lexical)
+
+    def test_define_proc(self):
+        bindings = {
+            "define": Builtins.DEFINE,
+            "+": base.plus,
+            "-": base.minus,
+        }
+        source = """
+            (define (p a b c) (- (+ a b) c))
+            (p 4 5 6)
+        """
+        result = interop.eval_str(source, bindings)
+        self.assertEqual(result, 4 + 5 - 6)

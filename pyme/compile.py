@@ -217,13 +217,37 @@ class Compiler:
 
     def compile_define_var(self, var, value):
         if not base.symbolp(var):
-            raise CompileError("Non-symbol in variable definition")
+            raise CompileError("define: non-symbol in variable definition")
         self.compile_expr(value)
         pos = self.bytecode.add_variable(var)
         self.compile_shortest(
             pos,
             OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
         self.bytecode.append(OpCode.PUSH_FALSE.value)
+
+    def compile_define_proc(self, var, signature, *body):
+        if not base.symbolp(var):
+            raise CompileError("define: non-symbol in procedure definition")
+        self.compile_lambda(signature, *body)
+        pos = self.bytecode.add_variable(var)
+        self.compile_shortest(
+            pos,
+            OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
+        self.bytecode.append(OpCode.PUSH_FALSE.value)
+
+    def compile_define(self, lvalue, *rest):
+        if base.symbolp(lvalue):
+            if len(rest) < 1:
+                raise CompileError(
+                    "define: missing value for identifier")
+            if len(rest) > 1:
+                raise CompileError(
+                    "define: multiple values for identifier")
+            self.compile_define_var(lvalue, rest[0])
+        elif base.pairp(lvalue):
+            self.compile_define_proc(lvalue.car, lvalue.cdr, *rest)
+        else:
+            raise CompileError("define: invalid syntax")
 
     def compile_set_var(self, var, value):
         if not base.symbolp(var):
@@ -236,15 +260,15 @@ class Compiler:
         self.bytecode.append(OpCode.PUSH_FALSE.value)
 
 
-def compile(exprs, *, env):
-    """Compile exprs to Bytecode.
+def compile(expr, *, env):
+    """Compile expr to Bytecode.
 
-    'exprs' is a list of expressions to compile.
+    'exprs' is a Scheme expression to compile.
 
-    Use 'env' to resolve special forms while compiling exprssions.
+    Use 'env' to resolve special forms while compiling exprssion.
     """
     compiler = Compiler(env=env)
-    compiler.compile_block(exprs)
+    compiler.compile_block([expr])
     return compiler.bytecode
 
 
@@ -253,7 +277,7 @@ class Builtins:
     IF = _Builtin(Compiler.compile_if)
     QUOTE = _Builtin(Compiler.compile_const)
     LAMBDA = _Builtin(Compiler.compile_lambda)
-    DEFINE = _Builtin(Compiler.compile_define_var)
+    DEFINE = _Builtin(Compiler.compile_define)
     SET = _Builtin(Compiler.compile_set_var)
 
 
