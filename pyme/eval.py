@@ -1,6 +1,7 @@
 """Evaluate Scheme code."""
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 import numbers
 
 from pyme import base
@@ -11,14 +12,10 @@ from pyme.compile import OpCode
 from pyme.exceptions import EvalError
 
 
-class Closure:
-
-    def __init__(self, bytecode, *, env):
-        self.bytecode = bytecode
-        self.env = env
+Closure = namedtuple('Closure', ['bytecode', 'env'])
 
 
-def bind_formals(bytecode, args):
+def _bind_formals(bytecode, args):
     if len(bytecode.formals) > len(args):
         raise EvalError("Not enough arguments in procedure call")
     if bytecode.formals_rest is None and len(bytecode.formals) < len(args):
@@ -33,7 +30,7 @@ def bind_formals(bytecode, args):
     return bindings
 
 
-def pop_proc_args(stack, num):
+def _pop_proc_args(stack, num):
     if len(stack) < num + 1:
         raise EvalError("Not enough values on stack for procedure call")
     new_stack = stack[:len(stack)-num-1]
@@ -42,10 +39,8 @@ def pop_proc_args(stack, num):
     return new_stack, proc, args
 
 
-def run(closure):
-    """Run closure in its stored environment."""
-    env = closure.env
-    bytecode = closure.bytecode
+def run(bytecode, *, env):
+    """Run bytecode in environment 'env'."""
     proc_stack = []
     stack = []
     ip = 0
@@ -79,9 +74,9 @@ def run(closure):
         elif instr == OpCode.CALL_1.value:
             num_args = bytecode.code[ip]
             ip += 1
-            stack, proc, args = pop_proc_args(stack, num_args)
+            stack, proc, args = _pop_proc_args(stack, num_args)
             if isinstance(proc, Closure):
-                bindings = bind_formals(proc.bytecode, args)
+                bindings = _bind_formals(proc.bytecode, args)
                 proc_stack.append((bytecode, ip, env))
                 bytecode = proc.bytecode
                 ip = 0
@@ -92,9 +87,9 @@ def run(closure):
         elif instr == OpCode.CALL_3.value:
             num_args = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
-            stack, proc, args = pop_proc_args(stack, num_args)
+            stack, proc, args = _pop_proc_args(stack, num_args)
             if isinstance(proc, Closure):
-                bindings = bind_formals(proc.bytecode, args)
+                bindings = _bind_formals(proc.bytecode, args)
                 proc_stack.append((bytecode, ip, env))
                 bytecode = proc.bytecode
                 ip = 0
@@ -148,5 +143,5 @@ def eval(exprs, *, env):
     in environment 'env'.
     """
     bytecode = compile.compile(exprs, env=env)
-    result = run(Closure(bytecode, env=env))
+    result = run(bytecode, env=env)
     return result

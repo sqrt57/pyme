@@ -30,6 +30,27 @@ class OpCode(IntEnum):
     SET_VAR_3 = auto()
     PUSH_FALSE = auto()
     MAKE_CLOSURE = auto()
+    APPLY = auto()
+
+
+opcode_num_args = {
+    OpCode.CONST_1: 1,
+    OpCode.CONST_3: 3,
+    OpCode.READ_VAR_1: 1,
+    OpCode.READ_VAR_3: 3,
+    OpCode.RET: 0,
+    OpCode.DROP: 0,
+    OpCode.CALL_1: 1,
+    OpCode.CALL_3: 3,
+    OpCode.JUMP_IF_NOT_3: 3,
+    OpCode.JUMP_3: 3,
+    OpCode.DEFINE_1: 1,
+    OpCode.DEFINE_3: 3,
+    OpCode.SET_VAR_1: 1,
+    OpCode.SET_VAR_3: 3,
+    OpCode.PUSH_FALSE: 0,
+    OpCode.MAKE_CLOSURE: 0,
+}
 
 
 class Bytecode:
@@ -235,24 +256,6 @@ class Builtins:
     DEFINE = _Builtin(Compiler.compile_define_var)
     SET = _Builtin(Compiler.compile_set_var)
 
-num_args = {
-    OpCode.CONST_1: 1,
-    OpCode.CONST_3: 3,
-    OpCode.READ_VAR_1: 1,
-    OpCode.READ_VAR_3: 3,
-    OpCode.RET: 0,
-    OpCode.DROP: 0,
-    OpCode.CALL_1: 1,
-    OpCode.CALL_3: 3,
-    OpCode.JUMP_IF_NOT_3: 3,
-    OpCode.JUMP_3: 3,
-    OpCode.DEFINE_1: 1,
-    OpCode.DEFINE_3: 3,
-    OpCode.SET_VAR_1: 1,
-    OpCode.SET_VAR_3: 3,
-    OpCode.PUSH_FALSE: 0,
-    OpCode.MAKE_CLOSURE: 0,
-}
 
 def decompile_code_inner(bytecode, *, result, prefix):
     l = math.ceil(math.log10(len(bytecode.code) + 1))
@@ -263,7 +266,7 @@ def decompile_code_inner(bytecode, *, result, prefix):
     result.append("{0}variables = {1}".format(prefix, bytecode.variables))
     while ip < len(bytecode.code):
         instr = OpCode(bytecode.code[ip])
-        n = num_args[instr]
+        n = opcode_num_args[instr]
         if n > 0:
             arg = int.from_bytes(bytecode.code[ip+1:ip+n+1], byteorder='big')
             result.append("{0}{1:0{2}}: {3:10} {4}".format(
