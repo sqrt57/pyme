@@ -3,7 +3,7 @@ import io
 from pyme import base
 from pyme import eval
 from pyme import ports
-from pyme.reader import Reader
+from pyme import reader
 from pyme import types
 from pyme import write
 
@@ -27,8 +27,8 @@ def read_str(str_, symbol_table=None):
     if symbol_table is None:
         symbol_table = types.SymbolTable()
     in_port = ports.TextStreamPort(io.StringIO(str_))
-    reader = Reader(symbol_table=symbol_table)
-    return reader.read(in_port)
+    reader_ = reader.Reader(symbol_table=symbol_table)
+    return reader_.read(in_port)
 
 
 def write_str(obj):
@@ -45,12 +45,12 @@ def display_str(obj):
     return stream.getvalue()
 
 
-def str_bindings_to_env(str_bindings, symbol_table):
+def str_bindings_to_env(str_bindings, *, symbol_table, parent=None):
     bindings = {
         symbol_table[name]: value
         for name, value in str_bindings.items()
     }
-    return types.Environment(bindings=bindings)
+    return types.Environment(bindings=bindings, parent=parent)
 
 
 def env_to_str_bindings(env):
@@ -66,12 +66,12 @@ def env_to_str_bindings(env):
 
 def eval_str(str_, str_bindings):
     symbol_table = types.SymbolTable()
-    env = str_bindings_to_env(str_bindings, symbol_table)
-    reader = Reader(symbol_table=symbol_table)
+    env = str_bindings_to_env(str_bindings, symbol_table=symbol_table)
+    reader_ = reader.Reader(symbol_table=symbol_table)
     in_port = ports.TextStreamPort(io.StringIO(str_))
     result = False
     while True:
-        expr = reader.read(in_port)
+        expr = reader_.read(in_port)
         if base.eofp(expr):
             return result
         result = eval.eval(expr, env=env)

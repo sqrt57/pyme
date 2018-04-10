@@ -139,14 +139,14 @@ class Reader:
             next_char = port.peek_char()
             if not base.eofp(next_char) and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
-                                             + char + next_char)
+                                  + char + next_char)
             return True
         elif char == 'f':
             port.read(1)
             next_char = port.peek_char()
             if not base.eofp(next_char) and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
-                                             + char + next_char)
+                                  + char + next_char)
             return False
         else:
             raise ReaderError("Invalid hash syntax: #" + char)

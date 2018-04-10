@@ -14,7 +14,6 @@ class TestEval(unittest.TestCase):
     def setUp(self):
         pass
 
-    @unittest.skip
     def test_variable(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["a"]: 5})

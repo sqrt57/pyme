@@ -7,13 +7,13 @@
     + lambda
     + define
     + set!
-    - define procedure
+    + define procedure
     - eval
     - apply
 + Disassembler
++ Full interpreter
 - Benchmarks
 - Custom types
 - Custom reader
 - Custom compiler
-- Full interpreter
 - Make all runtime errors subclass EvalError or SchemeError
