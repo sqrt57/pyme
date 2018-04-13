@@ -14,6 +14,11 @@ class ReaderError(PymeException):
     pass
 
 
+class CompileError(PymeException):
+    """Error compiling source."""
+    pass
+
+
 class EvalError(PymeException):
     """Runtime eval error."""
     pass
@@ -24,6 +29,9 @@ class IdentifierNotBoundError(EvalError):
     pass
 
 
-class CompileError(PymeException):
-    """Error compiling source."""
-    pass
+class SchemeError(EvalError):
+    """Identifier not bound."""
+
+    def __init__(self, obj):
+        super().__init__(obj)
+        self.object = obj

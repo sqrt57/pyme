@@ -1,5 +1,6 @@
 import numbers
 
+from pyme import exceptions
 from pyme.registry import builtin
 from pyme import types
 
@@ -74,3 +75,8 @@ def minus(z, *zs):
 @builtin("cons")
 def cons(x, y):
     return types.Pair(x, y)
+
+
+@builtin("error")
+def error(obj):
+    raise exceptions.SchemeError(obj)
