@@ -1,19 +1,14 @@
-- Compiler and evaluator:
-    + constants
-    + variable read
-    + procedure call
-    + if
-    + quote
-    + lambda
-    + define
-    + set!
-    + define procedure
-    - eval
-    - apply
 + Disassembler
 + Full interpreter
-- Benchmarks
+- Errors
+- Unit tests in Scheme
+- Tail calls
+- First-class environments
+- eval
+- apply
 - Custom types
+- Benchmarks
+- Catch errors
 - Custom reader
 - Custom compiler
 - Make all runtime errors subclass EvalError or SchemeError
