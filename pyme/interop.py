@@ -26,7 +26,7 @@ def from_scheme_list(list_):
 def read_str(str_, symbol_table=None):
     if symbol_table is None:
         symbol_table = types.SymbolTable()
-    in_port = ports.TextStreamPort(io.StringIO(str_))
+    in_port = ports.TextStreamPort.from_stream(io.StringIO(str_))
     reader_ = reader.Reader(symbol_table=symbol_table)
     return reader_.read(in_port)
 
@@ -68,7 +68,7 @@ def eval_str(str_, str_bindings):
     symbol_table = types.SymbolTable()
     env = str_bindings_to_env(str_bindings, symbol_table=symbol_table)
     reader_ = reader.Reader(symbol_table=symbol_table)
-    in_port = ports.TextStreamPort(io.StringIO(str_))
+    in_port = ports.TextStreamPort.from_stream(io.StringIO(str_))
     result = False
     while True:
         expr = reader_.read(in_port)

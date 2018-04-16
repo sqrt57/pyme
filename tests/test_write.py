@@ -8,7 +8,7 @@ class TestWrite(unittest.TestCase):
 
     def setUp(self):
         self.stream = io.StringIO()
-        self.port = ports.TextStreamPort(self.stream)
+        self.port = ports.TextStreamPort.from_stream(self.stream)
 
     def test_write_pair(self):
         pair = base.cons(1, "qqq")

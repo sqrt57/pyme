@@ -7,7 +7,7 @@ from pyme import base, ports
 class TestReadPorts(unittest.TestCase):
 
     def test_read(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefgh"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefgh"))
         result1 = port.read(3)
         result2 = port.read()
         result3 = port.read()
@@ -16,7 +16,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertTrue(base.eofp(result3))
 
     def test_readline(self):
-        port = ports.TextStreamPort(io.StringIO("abc\n\ndef"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abc\n\ndef"))
         result1 = port.readline()
         result2 = port.readline()
         result3 = port.readline()
@@ -27,21 +27,21 @@ class TestReadPorts(unittest.TestCase):
         self.assertTrue(base.eofp(result4))
 
     def test_peek_read_n(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read(3)
         self.assertEqual(result1, "a")
         self.assertEqual(result2, "abc")
 
     def test_peek_read_all(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read()
         self.assertEqual(result1, "a")
         self.assertEqual(result2, "abcdefg")
 
     def test_peek_read_eof(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         port.read()
         result1 = port.peek_char()
         result2 = port.read()
@@ -49,7 +49,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertTrue(base.eofp(result2))
 
     def test_peek_read_read(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read(3)
         result3 = port.read(3)
@@ -58,7 +58,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result3, "def")
 
     def test_peek_read_peak_read(self):
-        port = ports.TextStreamPort(io.StringIO("abcdefg"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read(3)
         result3 = port.peek_char()
@@ -69,7 +69,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result4, "def")
 
     def test_peek_readline(self):
-        port = ports.TextStreamPort(io.StringIO("abc\ndef\ngh"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("abc\ndef\ngh"))
         result1 = port.peek_char()
         result2 = port.readline()
         result3 = port.readline()
@@ -78,7 +78,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result3, "def\n")
 
     def test_peek_readline_empty(self):
-        port = ports.TextStreamPort(io.StringIO("\nabc\ndef\ngh"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("\nabc\ndef\ngh"))
         result1 = port.peek_char()
         result2 = port.readline()
         result3 = port.readline()
@@ -87,7 +87,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertEqual(result3, "abc\n")
 
     def test_readline_peek_readline_eof(self):
-        port = ports.TextStreamPort(io.StringIO("\nabc\ndef\ngh"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("\nabc\ndef\ngh"))
         port.read()
         result1 = port.readline()
         result2 = port.peek_char()
@@ -97,7 +97,7 @@ class TestReadPorts(unittest.TestCase):
         self.assertTrue(base.eofp(result3))
 
     def test_peek_readline_peek_eof(self):
-        port = ports.TextStreamPort(io.StringIO("\nabc\ndef\ngh"))
+        port = ports.TextStreamPort.from_stream(io.StringIO("\nabc\ndef\ngh"))
         port.read()
         result1 = port.peek_char()
         result2 = port.readline()
@@ -111,12 +111,12 @@ class TestWritePorts(unittest.TestCase):
 
     def test_write(self):
         stream = io.StringIO()
-        port = ports.TextStreamPort(stream)
+        port = ports.TextStreamPort.from_stream(stream)
         port.write("abc")
         self.assertEqual(stream.getvalue(), "abc")
 
     def test_newline(self):
         stream = io.StringIO()
-        port = ports.TextStreamPort(stream)
+        port = ports.TextStreamPort.from_stream(stream)
         port.newline()
         self.assertEqual(stream.getvalue(), "\n")

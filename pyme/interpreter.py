@@ -19,11 +19,21 @@ class Interpreter:
         self._global_env = interop.str_bindings_to_env(
             registry.builtins, symbol_table=self._symbol_table)
 
-    def eval_str(self, string):
-        in_port = ports.TextStreamPort(io.StringIO(string))
+    def eval_port(self, in_port, env=None):
+        if env is None:
+            env = self._global_env
         result = False
         while True:
             expr = self._reader.read(in_port)
             if base.eofp(expr):
                 return result
-            result = eval.eval(expr, env=self._global_env)
+            result = eval.eval(expr, env=env)
+
+    def eval_str(self, string, env=None):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO(string))
+        return self.eval_port(in_port, env=env)
+
+    def eval_file(self, filename, env=None):
+        with open(filename) as file:
+            in_port = ports.TextStreamPort.from_stream(file)
+            return self.eval_port(in_port, env=env)

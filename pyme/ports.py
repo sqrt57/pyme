@@ -5,7 +5,7 @@ from pyme import types
 
 class TextStreamPort(types.TextualPortBase):
 
-    def __init__(self, stream, *, readable=True, writable=True):
+    def __init__(self, stream, *, readable, writable):
         self._stream = stream
         self._readable = readable
         self._writable = writable
@@ -14,6 +14,12 @@ class TextStreamPort(types.TextualPortBase):
             raise ValueError("Stream must be readable if readable=True")
         if writable and not stream.writable():
             raise ValueError("Stream must be writable if writable=True")
+
+    @classmethod
+    def from_stream(cls, stream):
+        return cls(stream,
+                   readable=stream.readable(),
+                   writable=stream.writable())
 
     def readable(self):
         return self._readable
