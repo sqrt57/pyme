@@ -1,3 +1,4 @@
+import pathlib
 import unittest
 
 from pyme import Interpreter
@@ -8,6 +9,9 @@ class TestInterpreter(unittest.TestCase):
 
     def setUp(self):
         self.interpreter = Interpreter()
+        self.interpreter.load_paths = [
+            pathlib.Path(__file__).parent.parent
+        ]
 
     def test_create(self):
         result = self.interpreter.eval_str("(+ 1 2)")

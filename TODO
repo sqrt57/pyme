@@ -2,6 +2,7 @@
 + Full interpreter
 + Errors
 + load
++ Load paths
 - Unit tests in Scheme
 - Tail calls
 - First-class environments

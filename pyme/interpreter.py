@@ -4,6 +4,7 @@ import io
 
 from pyme import base
 from pyme import eval
+from pyme import exceptions
 from pyme import interop
 from pyme import ports
 from pyme import reader
@@ -18,6 +19,7 @@ class Interpreter:
         self._reader = reader.Reader(symbol_table=self._symbol_table)
         self._global_env = interop.str_bindings_to_env(
             self._default_builtins_dict, symbol_table=self._symbol_table)
+        self.load_paths = []
 
     @property
     def _default_builtins_dict(self):
@@ -42,7 +44,19 @@ class Interpreter:
         in_port = ports.TextStreamPort.from_stream(io.StringIO(string))
         return self.eval_port(in_port, env=env)
 
+    def find_file(self, filename):
+        for path in self.load_paths:
+            subpath = path.joinpath(filename)
+            print(subpath)
+            if subpath.exists():
+                return subpath
+        return None
+
     def eval_file(self, filename, env=None):
-        with open(filename) as file:
+        path = self.find_file(filename)
+        if path is None:
+            msg = f"load error: {filename} not found"
+            raise exceptions.EvalError(msg)
+        with path.open() as file:
             in_port = ports.TextStreamPort.from_stream(file)
             return self.eval_port(in_port, env=env)
