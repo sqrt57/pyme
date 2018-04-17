@@ -1,7 +1,7 @@
 import numbers
 
 from pyme import exceptions
-from pyme.registry import builtin
+from pyme.registry import builtin, builtin_with_interpreter
 from pyme import types
 
 
@@ -80,3 +80,10 @@ def cons(x, y):
 @builtin("error")
 def error(obj):
     raise exceptions.SchemeError(obj)
+
+
+@builtin_with_interpreter("load")
+def load(interpreter):
+    def load(filename, env=None):
+        interpreter.eval_file(filename, env)
+    return load

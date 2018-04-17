@@ -8,6 +8,7 @@ import math
 from pyme import base
 from pyme.exceptions import CompileError
 from pyme import interop
+from pyme.registry import builtin
 from pyme import types
 
 
@@ -265,7 +266,7 @@ def compile(expr, *, env):
 
     'exprs' is a Scheme expression to compile.
 
-    Use 'env' to resolve special forms while compiling exprssion.
+    Use 'env' to resolve special forms while compiling expression.
     """
     compiler = Compiler(env=env)
     compiler.compile_block([expr])
@@ -274,11 +275,11 @@ def compile(expr, *, env):
 
 class Builtins:
 
-    IF = _Builtin(Compiler.compile_if)
-    QUOTE = _Builtin(Compiler.compile_const)
-    LAMBDA = _Builtin(Compiler.compile_lambda)
-    DEFINE = _Builtin(Compiler.compile_define)
-    SET = _Builtin(Compiler.compile_set_var)
+    IF = builtin("if")(_Builtin(Compiler.compile_if))
+    QUOTE = builtin("quote")(_Builtin(Compiler.compile_const))
+    LAMBDA = builtin("lambda")(_Builtin(Compiler.compile_lambda))
+    DEFINE = builtin("define")(_Builtin(Compiler.compile_define))
+    SET = builtin("set!")(_Builtin(Compiler.compile_set_var))
 
 
 def decompile_code_inner(bytecode, *, result, prefix):

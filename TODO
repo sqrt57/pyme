@@ -1,7 +1,7 @@
 + Disassembler
 + Full interpreter
 + Errors
-- load
++ load
 - Unit tests in Scheme
 - Tail calls
 - First-class environments

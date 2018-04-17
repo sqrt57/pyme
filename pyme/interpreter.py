@@ -17,7 +17,16 @@ class Interpreter:
         self._symbol_table = types.SymbolTable()
         self._reader = reader.Reader(symbol_table=self._symbol_table)
         self._global_env = interop.str_bindings_to_env(
-            registry.builtins, symbol_table=self._symbol_table)
+            self._default_builtins_dict, symbol_table=self._symbol_table)
+
+    @property
+    def _default_builtins_dict(self):
+        result = dict(registry.builtins)
+        result.update({
+            key: value(self)
+            for key, value in registry.builtins_with_interpreter.items()
+        })
+        return result
 
     def eval_port(self, in_port, env=None):
         if env is None:
