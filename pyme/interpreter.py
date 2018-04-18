@@ -1,6 +1,7 @@
 """Top-level interpreter class."""
 
 import io
+import sys
 
 from pyme import base
 from pyme import eval
@@ -10,6 +11,7 @@ from pyme import ports
 from pyme import reader
 from pyme import registry
 from pyme import types
+from pyme import write
 
 
 class Interpreter:
@@ -17,9 +19,12 @@ class Interpreter:
     def __init__(self):
         self._symbol_table = types.SymbolTable()
         self._reader = reader.Reader(symbol_table=self._symbol_table)
-        self._global_env = interop.str_bindings_to_env(
+        self.global_env = interop.str_bindings_to_env(
             self._default_builtins_dict, symbol_table=self._symbol_table)
         self.load_paths = []
+        self.stdout = ports.TextStreamPort.from_stream(sys.stdout)
+        self.stdin = ports.TextStreamPort.from_stream(sys.stdin)
+        self.stderr = ports.TextStreamPort.from_stream(sys.stderr)
 
     @property
     def _default_builtins_dict(self):
@@ -32,7 +37,7 @@ class Interpreter:
 
     def eval_port(self, in_port, env=None):
         if env is None:
-            env = self._global_env
+            env = self.global_env
         result = False
         while True:
             expr = self._reader.read(in_port)

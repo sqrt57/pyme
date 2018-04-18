@@ -1,6 +1,25 @@
 import numbers
 
 from pyme import base
+from pyme.registry import builtin_with_interpreter
+
+
+@builtin_with_interpreter("write")
+def write(interpreter):
+    def write(obj, port=None):
+        if port is None:
+            port = interpreter.stdout
+        write_to(obj, port)
+    return write
+
+
+@builtin_with_interpreter("display")
+def display(interpreter):
+    def display(obj, port=None):
+        if port is None:
+            port = interpreter.stdout
+        display_to(obj, port)
+    return display
 
 
 def write_to(obj, port):

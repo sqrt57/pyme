@@ -1,8 +1,10 @@
+import io
 import pathlib
 import unittest
 
 from pyme import Interpreter
 from pyme import exceptions
+from pyme import ports
 
 
 class TestInterpreter(unittest.TestCase):
@@ -30,3 +32,16 @@ class TestInterpreter(unittest.TestCase):
         self.interpreter.eval_file("tests/define_a_1.scm")
         result = self.interpreter.eval_str("a")
         self.assertEqual(result, 1)
+
+    def test_write(self):
+        stream = io.StringIO()
+        self.interpreter.stdout = ports.TextStreamPort.from_stream(stream)
+        self.interpreter.eval_str('(write "abc")')
+        self.assertEqual(stream.getvalue(), '"abc"')
+
+    def test_display(self):
+        stream = io.StringIO()
+        self.interpreter.stdout = ports.TextStreamPort.from_stream(stream)
+        self.interpreter.eval_str('(display "abc")')
+        self.assertEqual(stream.getvalue(), 'abc')
+
