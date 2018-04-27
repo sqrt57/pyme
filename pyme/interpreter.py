@@ -1,6 +1,7 @@
 """Top-level interpreter class."""
 
 import io
+import pathlib
 import sys
 
 from pyme import base
@@ -17,11 +18,11 @@ from pyme import write
 class Interpreter:
 
     def __init__(self):
-        self._symbol_table = types.SymbolTable()
-        self._reader = reader.Reader(symbol_table=self._symbol_table)
+        self.symbol_table = types.SymbolTable()
+        self.reader = reader.Reader(symbol_table=self.symbol_table)
         self.global_env = interop.str_bindings_to_env(
-            self._default_builtins_dict, symbol_table=self._symbol_table)
-        self.load_paths = []
+            self._default_builtins_dict, symbol_table=self.symbol_table)
+        self.load_paths = [pathlib.Path.cwd()]
         self.stdout = ports.TextStreamPort.from_stream(sys.stdout)
         self.stdin = ports.TextStreamPort.from_stream(sys.stdin)
         self.stderr = ports.TextStreamPort.from_stream(sys.stderr)
@@ -40,10 +41,14 @@ class Interpreter:
             env = self.global_env
         result = False
         while True:
-            expr = self._reader.read(in_port)
+            expr = self.reader.read(in_port)
             if base.eofp(expr):
                 return result
             result = eval.eval(expr, env=env)
+
+    def eval_stream(self, stream, env=None):
+        in_port = ports.TextStreamPort.from_stream(stream)
+        return self.eval_port(in_port, env=env)
 
     def eval_str(self, string, env=None):
         in_port = ports.TextStreamPort.from_stream(io.StringIO(string))
@@ -52,7 +57,6 @@ class Interpreter:
     def find_file(self, filename):
         for path in self.load_paths:
             subpath = path.joinpath(filename)
-            print(subpath)
             if subpath.exists():
                 return subpath
         return None

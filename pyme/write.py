@@ -10,6 +10,7 @@ def write(interpreter):
         if port is None:
             port = interpreter.stdout
         write_to(obj, port)
+        return False
     return write
 
 
@@ -19,6 +20,7 @@ def display(interpreter):
         if port is None:
             port = interpreter.stdout
         display_to(obj, port)
+        return False
     return display
 
 

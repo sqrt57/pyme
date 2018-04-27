@@ -3,7 +3,6 @@
 + Errors
 + load
 + Load paths
-- Unit tests in Scheme
 - Tail calls
 - First-class environments
 - eval
@@ -13,4 +12,5 @@
 - Catch errors
 - Custom reader
 - Custom compiler
+- Unit tests in Scheme
 - Make all runtime errors subclass EvalError or SchemeError
