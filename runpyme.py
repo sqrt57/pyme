@@ -1,5 +1,4 @@
 import argparse
-import logging
 import sys
 
 from pyme import base
@@ -51,8 +50,6 @@ def repl(interpreter):
 def main(args=None):
     parser = cmdline_parser()
     args = parser.parse_args(args)
-    logger = logging.getLogger(__name__)
-    logger.debug(args)
     interpreter = Interpreter()
 
     if args.code is not None:
@@ -69,5 +66,4 @@ def main(args=None):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     main()
