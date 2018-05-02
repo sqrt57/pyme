@@ -29,9 +29,14 @@ def write_to(obj, port):
         obj.write_to(port)
     elif base.nullp(obj):
         port.write("()")
-    elif isinstance(obj, numbers.Integral):
+    elif base.booleanp(obj):
+        if base.is_true(obj):
+            port.write("#t")
+        else:
+            port.write("#f")
+    elif base.numberp(obj):
         port.write(repr(obj))
-    elif isinstance(obj, str):
+    elif base.stringp(obj):
         port.write('"')
         port.write(obj)
         port.write('"')
@@ -46,9 +51,14 @@ def display_to(obj, port):
         obj.display_to(port)
     elif base.nullp(obj):
         port.write("()")
-    elif isinstance(obj, numbers.Integral):
+    elif base.booleanp(obj):
+        if base.is_true(obj):
+            port.write("#t")
+        else:
+            port.write("#f")
+    elif base.numberp(obj):
         port.write(str(obj))
-    elif isinstance(obj, str):
+    elif base.stringp(obj):
         port.write(obj)
     elif 'write_to' in dir(obj):
         obj.write_to(port)

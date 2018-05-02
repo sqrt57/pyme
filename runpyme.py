@@ -43,6 +43,7 @@ def repl(interpreter):
             interpreter.stdout.newline()
             return
         result = eval.eval(expr, env=interpreter.global_env)
+        interpreter.stdout.newline()
         write.write_to(result, interpreter.stdout)
         interpreter.stdout.newline()
 

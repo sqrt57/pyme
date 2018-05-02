@@ -81,3 +81,19 @@ class TestWrite(unittest.TestCase):
         ])
         write.display_to(obj, self.port)
         self.assertEqual(self.stream.getvalue(), "'abc")
+
+    def test_write_true(self):
+        write.write_to(True, self.port)
+        self.assertEqual(self.stream.getvalue(), "#t")
+
+    def test_display_true(self):
+        write.display_to(True, self.port)
+        self.assertEqual(self.stream.getvalue(), "#t")
+
+    def test_write_false(self):
+        write.write_to(False, self.port)
+        self.assertEqual(self.stream.getvalue(), "#f")
+
+    def test_display_false(self):
+        write.display_to(False, self.port)
+        self.assertEqual(self.stream.getvalue(), "#f")
