@@ -8,8 +8,8 @@ from pyme import types
 from pyme import write
 
 
-def scheme_list(list_, cdr=base.null()):
-    result = cdr
+def scheme_list(list_, cdr=None):
+    result = cdr if cdr is not None else base.null()
     for item in reversed(list_):
         result = base.cons(item, result)
     return result
@@ -33,14 +33,14 @@ def read_str(str_, symbol_table=None):
 
 def write_str(obj):
     stream = io.StringIO()
-    port = ports.TextStreamPort(stream)
+    port = ports.TextStreamPort.from_stream(stream)
     write.write_to(obj, port)
     return stream.getvalue()
 
 
 def display_str(obj):
     stream = io.StringIO()
-    port = ports.TextStreamPort(stream)
+    port = ports.TextStreamPort.from_stream(stream)
     write.display_to(obj, port)
     return stream.getvalue()
 

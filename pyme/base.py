@@ -1,8 +1,10 @@
 import numbers
+import operator
 
 from pyme import exceptions
-from pyme.registry import builtin, builtin_with_interpreter
 from pyme import types
+from pyme.registry import builtin, builtin_with_interpreter
+from pyme.interop import scheme_list
 
 
 @builtin("pair?")
@@ -51,6 +53,7 @@ def booleanp(obj):
     return isinstance(obj, bool)
 
 
+@builtin("not")
 def is_false(obj):
     return obj is False
 
@@ -72,9 +75,98 @@ def minus(z, *zs):
         return -z
 
 
+@builtin("*")
+def multiply(*objs):
+    result = 1
+    for num in objs:
+        result *= num
+    return result
+
+
+@builtin("/")
+def divide(z, *zs):
+    if zs:
+        return z / multiply(*zs)
+    else:
+        return 1 / z
+
+
+@builtin("<")
+def lt(x, *rest):
+    if len(rest) < 1:
+        raise exceptions.EvalError("<: expected at least 2 arguments")
+    for y in rest:
+        if not x < y:
+            return False
+        x = y
+    return True
+
+
+@builtin(">")
+def gt(x, *rest):
+    if len(rest) < 1:
+        raise exceptions.EvalError(">: expected at least 2 arguments")
+    for y in rest:
+        if not x > y:
+            return False
+        x = y
+    return True
+
+
+@builtin("<=")
+def le(x, *rest):
+    if len(rest) < 1:
+        raise exceptions.EvalError("<=: expected at least 2 arguments")
+    for y in rest:
+        if not x <= y:
+            return False
+        x = y
+    return True
+
+
+@builtin(">=")
+def ge(x, *rest):
+    if len(rest) < 1:
+        raise exceptions.EvalError(">=: expected at least 2 arguments")
+    for y in rest:
+        if not x >= y:
+            return False
+        x = y
+    return True
+
+
+@builtin("=")
+def arithmetic_eq(x, *rest):
+    if len(rest) < 1:
+        raise exceptions.EvalError("=: expected at least 2 arguments")
+    for y in rest:
+        if x != y:
+            return False
+        x = y
+    return True
+
+
 @builtin("cons")
 def cons(x, y):
     return types.Pair(x, y)
+
+
+@builtin("car")
+def car(pair):
+    return pair.car
+
+
+@builtin("cdr")
+def cdr(pair):
+    return pair.cdr
+
+
+@builtin("list")
+def list_(*args):
+    return scheme_list(args)
+
+
+builtin("eq?")(operator.is_)
 
 
 @builtin("error")
