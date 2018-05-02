@@ -1,5 +1,6 @@
 import numbers
 import operator
+import sys
 
 from pyme import exceptions
 from pyme import types
@@ -179,3 +180,6 @@ def load(interpreter):
     def load(filename, env=None):
         interpreter.eval_file(filename, env)
     return load
+
+
+builtin("exit")(sys.exit)

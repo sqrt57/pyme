@@ -30,7 +30,7 @@ class IdentifierNotBoundError(EvalError):
 
 
 class SchemeError(EvalError):
-    """Identifier not bound."""
+    """Error raised by Scheme code."""
 
     def __init__(self, obj):
         super().__init__(obj)

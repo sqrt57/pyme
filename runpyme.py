@@ -3,6 +3,7 @@ import sys
 
 from pyme import base
 from pyme import eval
+from pyme import exceptions
 from pyme import write
 from pyme.interpreter import Interpreter
 from pyme.reader import Reader
@@ -38,11 +39,27 @@ def repl(interpreter):
     while True:
         interpreter.stdout.write(PROMPT)
         interpreter.stdout.flush_output()
-        expr = interpreter.reader.read(interpreter.stdin)
+
+        try:
+            expr = interpreter.reader.read(interpreter.stdin)
+        except exceptions.ReaderError as e:
+            interpreter.stdout.write("Error reading expression:\n")
+            interpreter.stdout.write(str(e))
+            interpreter.stdout.newline()
+            continue
+
         if base.eofp(expr):
             interpreter.stdout.newline()
             return
-        result = eval.eval(expr, env=interpreter.global_env)
+
+        try:
+            result = eval.eval(expr, env=interpreter.global_env)
+        except exceptions.EvalError as e:
+            interpreter.stdout.write("Error evaluating expression:\n")
+            interpreter.stdout.write(str(e))
+            interpreter.stdout.newline()
+            continue
+
         interpreter.stdout.newline()
         write.write_to(result, interpreter.stdout)
         interpreter.stdout.newline()
