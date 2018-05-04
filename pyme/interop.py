@@ -75,3 +75,13 @@ def eval_str(str_, str_bindings):
         if base.eofp(expr):
             return result
         result = eval.eval(expr, env=env)
+
+
+def get_config(config, path, default=None):
+    """Get"""
+    path = path.split(".")
+    for key in path:
+        if config is None: return default
+        config = config.get(key)
+    if config is None: return default
+    return config

@@ -25,14 +25,6 @@ class TestTypes(unittest.TestCase):
         b = store['qwe']
         self.assertEqual(a, b)
 
-    def test_scheme_list(self):
-        x = interop.scheme_list([1, 2])
-        self.assertTrue(base.pairp(x))
-        self.assertEqual(x.car, 1)
-        self.assertTrue(base.pairp(x.cdr))
-        self.assertEqual(x.cdr.car, 2)
-        self.assertTrue(base.nullp(x.cdr.cdr))
-
     def test_env_define(self):
         env = types.Environment()
         a = types.Symbol("a")
