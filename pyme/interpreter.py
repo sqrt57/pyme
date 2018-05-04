@@ -26,6 +26,11 @@ class Interpreter:
         self.stdout = ports.TextStreamPort.from_stream(sys.stdout)
         self.stdin = ports.TextStreamPort.from_stream(sys.stdin)
         self.stderr = ports.TextStreamPort.from_stream(sys.stderr)
+        self.instrumentation = {
+            "eval": {
+                "call": None
+            }
+        }
 
     @property
     def _default_builtins_dict(self):
@@ -44,7 +49,8 @@ class Interpreter:
             expr = self.reader.read(in_port)
             if base.eofp(expr):
                 return result
-            result = eval.eval(expr, env=env)
+            result = eval.eval(expr, env=env,
+                               instrumentation=self.instrumentation)
 
     def eval_stream(self, stream, env=None):
         in_port = ports.TextStreamPort.from_stream(stream)

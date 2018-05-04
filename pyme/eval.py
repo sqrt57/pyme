@@ -1,8 +1,8 @@
 """Evaluate Scheme code."""
 
+import numbers
 from abc import ABC, abstractmethod
 from collections import namedtuple
-import numbers
 
 from pyme import base
 from pyme import compile
@@ -39,11 +39,39 @@ def _pop_proc_args(stack, num):
     return new_stack, proc, args
 
 
-def run(bytecode, *, env):
+def run(bytecode, *, env, instrumentation=None):
     """Run bytecode in environment 'env'."""
     proc_stack = []
     stack = []
     ip = 0
+    call_hook = interop.get_config(instrumentation, "eval.call")
+
+    if call_hook is not None:
+        def do_call(proc, args):
+            nonlocal bytecode, ip, env
+            if isinstance(proc, Closure):
+                bindings = _bind_formals(proc.bytecode, args)
+                proc_stack.append((bytecode, ip, env))
+                bytecode = proc.bytecode
+                ip = 0
+                env = types.Environment(parent=proc.env, bindings=bindings)
+                call_hook(proc_stack, stack)
+            else:
+                result = proc(*args)
+                stack.append(result)
+    else:
+        def do_call(proc, args):
+            nonlocal bytecode, ip, env
+            if isinstance(proc, Closure):
+                bindings = _bind_formals(proc.bytecode, args)
+                proc_stack.append((bytecode, ip, env))
+                bytecode = proc.bytecode
+                ip = 0
+                env = types.Environment(parent=proc.env, bindings=bindings)
+            else:
+                result = proc(*args)
+                stack.append(result)
+
     while True:
         instr = bytecode.code[ip]
         ip += 1
@@ -75,28 +103,12 @@ def run(bytecode, *, env):
             num_args = bytecode.code[ip]
             ip += 1
             stack, proc, args = _pop_proc_args(stack, num_args)
-            if isinstance(proc, Closure):
-                bindings = _bind_formals(proc.bytecode, args)
-                proc_stack.append((bytecode, ip, env))
-                bytecode = proc.bytecode
-                ip = 0
-                env = types.Environment(parent=proc.env, bindings=bindings)
-            else:
-                result = proc(*args)
-                stack.append(result)
+            do_call(proc, args)
         elif instr == OpCode.CALL_3.value:
             num_args = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
             stack, proc, args = _pop_proc_args(stack, num_args)
-            if isinstance(proc, Closure):
-                bindings = _bind_formals(proc.bytecode, args)
-                proc_stack.append((bytecode, ip, env))
-                bytecode = proc.bytecode
-                ip = 0
-                env = types.Environment(parent=proc.env, bindings=bindings)
-            else:
-                result = proc(*args)
-                stack.append(result)
+            do_call(proc, args)
         elif instr == OpCode.JUMP_IF_NOT_3.value:
             new_pos = int.from_bytes(bytecode.code[ip:ip+3], byteorder='big')
             ip += 3
@@ -136,12 +148,12 @@ def run(bytecode, *, env):
             raise EvalError("Unknown bytecode: 0x{:02x}".format(instr))
 
 
-def eval(expr, *, env):
+def eval(expr, *, env, instrumentation=None):
     """Evaluate scheme expr.
 
     Compile and execute Scheme expression 'expr'
     in environment 'env'.
     """
     bytecode = compile.compile(expr, env=env)
-    result = run(bytecode, env=env)
+    result = run(bytecode, env=env, instrumentation=instrumentation)
     return result
