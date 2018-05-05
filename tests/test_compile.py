@@ -55,25 +55,47 @@ class TestCompile(unittest.TestCase):
             OpCode.READ_VAR_1.value, 0,
             OpCode.CONST_1.value, 0,
             OpCode.CONST_1.value, 1,
-            OpCode.CALL_1.value, 2,
-            OpCode.RET.value]))
+            OpCode.TAIL_CALL_1.value, 2,
+        ]))
         self.assertEqual(result.variables, [symbol_table["+"]])
         self.assertEqual(result.constants, [10, 20])
 
-    def test_if(self):
+    def test_if_tail(self):
         symbol_table = types.SymbolTable()
         env = types.Environment(bindings={symbol_table["if"]: Builtins.IF})
         expr = interop.read_str("(if #t 3 4)", symbol_table=symbol_table)
         result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
             OpCode.CONST_1.value, 0,
-            OpCode.JUMP_IF_NOT_3.value, 0, 0, 12,
+            OpCode.JUMP_IF_NOT_3.value, 0, 0, 9,
             OpCode.CONST_1.value, 1,
-            OpCode.JUMP_3.value, 0, 0, 14,
+            OpCode.RET.value,
             OpCode.CONST_1.value, 2,
-            OpCode.RET.value]))
+            OpCode.RET.value,
+        ]))
         self.assertEqual(result.variables, [])
         self.assertEqual(result.constants, [True, 3, 4])
+
+    def test_if_non_tail(self):
+        symbol_table = types.SymbolTable()
+        env = types.Environment(bindings={
+            symbol_table["if"]: Builtins.IF,
+            symbol_table["+"]: base.plus,
+        })
+        expr = interop.read_str("(+ (if #t 3 4) 5)", symbol_table=symbol_table)
+        result = compile(expr, env=env)
+        self.assertEqual(result.code, bytes([
+            OpCode.READ_VAR_1.value, 0,
+            OpCode.CONST_1.value, 0,
+            OpCode.JUMP_IF_NOT_3.value, 0, 0, 14,
+            OpCode.CONST_1.value, 1,
+            OpCode.JUMP_3.value, 0, 0, 16,
+            OpCode.CONST_1.value, 2,
+            OpCode.CONST_1.value, 3,
+            OpCode.TAIL_CALL_1.value, 2,
+        ]))
+        self.assertEqual(result.variables, [symbol_table["+"]])
+        self.assertEqual(result.constants, [True, 3, 4, 5])
 
     def test_quote(self):
         symbol_table = types.SymbolTable()

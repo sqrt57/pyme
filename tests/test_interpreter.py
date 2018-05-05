@@ -56,5 +56,33 @@ class TestInterpreter(unittest.TestCase):
             (define (sum-to n) (if (= n 0) 0 (+ n (sum-to (- n 1)))))
             (sum-to {})
         """.format(n))
-        self.assertEquals(result, n * (n+1) // 2)
+        self.assertEqual(result, n * (n+1) // 2)
         self.assertGreaterEqual(max_depth, n)
+
+    def test_tail_call(self):
+        def call_hook(call_stack, stack):
+            nonlocal max_depth
+            max_depth = max(max_depth, len(call_stack))
+        max_depth = 0
+        n = 100
+        self.interpreter.instrumentation["eval"]["call"] = call_hook
+        result = self.interpreter.eval_str("""
+            (define (sum-to n acc) (if (= n 0) acc (sum-to (- n 1) (+ acc n))))
+            (sum-to {} 0)
+        """.format(n))
+        self.assertEqual(result, n * (n+1) // 2)
+        self.assertLess(max_depth, 10)
+
+    def test_tail_call_if(self):
+        def call_hook(call_stack, stack):
+            nonlocal max_depth
+            max_depth = max(max_depth, len(call_stack))
+        max_depth = 0
+        n = 100
+        self.interpreter.instrumentation["eval"]["call"] = call_hook
+        result = self.interpreter.eval_str("""
+            (define (sum-to n acc) (if (> n 0) (sum-to (- n 1) (+ acc n)) acc))
+            (sum-to {} 0)
+        """.format(n))
+        self.assertEqual(result, n * (n+1) // 2)
+        self.assertLess(max_depth, 10)

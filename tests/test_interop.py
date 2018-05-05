@@ -24,12 +24,12 @@ class TestGetConfig(unittest.TestCase):
 
     def test_level1(self):
         config = {"x": 5}
-        self.assertEquals(get_config(config, "x"), 5)
+        self.assertEqual(get_config(config, "x"), 5)
         self.assertIsNone(get_config(config, "y"))
 
     def test_level2(self):
         config = {
             "x": {"x": 7}
         }
-        self.assertEquals(get_config(config, "x.x"), 7)
+        self.assertEqual(get_config(config, "x.x"), 7)
         self.assertIsNone(get_config(config, "x.y"))

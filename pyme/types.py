@@ -51,6 +51,12 @@ class Symbol:
     def write_to(self, port):
         port.write(self.name)
 
+    def display_to(self, port):
+        port.write(self.name)
+
+    def __repr__(self):
+        return f"<Symbol:{self.name}>"
+
 
 class Environment:
 
