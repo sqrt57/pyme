@@ -3,8 +3,8 @@
 + Errors
 + load
 + Load paths
-- Tail calls
-- First-class environments
++ Tail calls
++ First-class environments
 - eval
 - apply
 - Custom types

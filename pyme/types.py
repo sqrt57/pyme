@@ -102,6 +102,9 @@ class Environment:
             env = env.parent
         raise exceptions.IdentifierNotBoundError(str(index))
 
+    def write_to(self, port):
+        port.write(f"#<environment:{id(self)}>")
+
 
 class Eof:
     pass

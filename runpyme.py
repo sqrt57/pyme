@@ -59,6 +59,11 @@ def repl(interpreter):
             interpreter.stdout.write(str(e))
             interpreter.stdout.newline()
             continue
+        except Exception as e:
+            interpreter.stdout.write("Got exception:\n")
+            interpreter.stdout.write(str(e))
+            interpreter.stdout.newline()
+            continue
 
         interpreter.stdout.newline()
         write.write_to(result, interpreter.stdout)
