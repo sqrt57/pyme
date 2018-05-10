@@ -27,7 +27,7 @@ class Interpreter:
         self.stdout = ports.TextStreamPort.from_stream(sys.stdout)
         self.stdin = ports.TextStreamPort.from_stream(sys.stdin)
         self.stderr = ports.TextStreamPort.from_stream(sys.stderr)
-        self.instrumentation = {
+        self.hooks = {
             "eval": {
                 "call": None
             }
@@ -51,7 +51,7 @@ class Interpreter:
             if base.eofp(expr):
                 return result
             result = eval.eval(expr, env=env,
-                               instrumentation=self.instrumentation)
+                               hooks=self.hooks)
 
     def eval_stream(self, stream, env=None):
         in_port = ports.TextStreamPort.from_stream(stream)
