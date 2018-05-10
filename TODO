@@ -5,7 +5,7 @@
 + Load paths
 + Tail calls
 + First-class environments
-- eval
++ eval
 - apply
 - Custom types
 - Benchmarks

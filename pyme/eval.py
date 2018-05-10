@@ -10,9 +10,15 @@ from pyme import interop
 from pyme import types
 from pyme.compile import OpCode
 from pyme.exceptions import EvalError
+from pyme.registry import builtin
 
 
 Closure = namedtuple('Closure', ['bytecode', 'env'])
+
+
+def with_evaluator(proc):
+    proc.with_evaluator = True
+    return proc
 
 
 def _bind_formals(bytecode, args):
@@ -63,6 +69,8 @@ class Evaluator:
             self.env = types.Environment(parent=proc.env, bindings=bindings)
             if self.call_hook is not None:
                 self.call_hook(self)
+        elif hasattr(proc, "with_evaluator"):
+            proc(*args, evaluator=self, tail=tail)
         else:
             result = proc(*args)
             self.stack.append(result)
@@ -171,6 +179,14 @@ class Evaluator:
                 self.step()
         except self.Return as e:
             return e.value
+
+
+@with_evaluator
+@builtin("eval")
+def scheme_eval(expr, env, *, evaluator, tail):
+    bytecode = compile.compile(expr, env=env)
+    closure = Closure(bytecode=bytecode, env=env)
+    evaluator.do_apply(closure, [], tail=tail)
 
 
 def eval(expr, *, env, hooks=None):

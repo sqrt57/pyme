@@ -86,3 +86,15 @@ class TestInterpreter(unittest.TestCase):
         """.format(n))
         self.assertEqual(result, n * (n+1) // 2)
         self.assertLess(max_depth, 10)
+
+    def test_eval(self):
+        result = self.interpreter.eval_str(
+            "(eval '(+ 3 4) (global-environment))")
+        self.assertEqual(result, 7)
+
+    def test_eval_env(self):
+        result = self.interpreter.eval_str("""
+            (define env (empty-environment))
+            (set-environment-binding! env 'plus +)
+            (eval '(plus 3 4) env)""")
+        self.assertEqual(result, 7)
