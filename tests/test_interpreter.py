@@ -98,3 +98,7 @@ class TestInterpreter(unittest.TestCase):
             (set-environment-binding! env 'plus +)
             (eval '(plus 3 4) env)""")
         self.assertEqual(result, 7)
+
+    def test_apply(self):
+        result = self.interpreter.eval_str("(apply + 1 2 '(3 4))")
+        self.assertEqual(result, 10)

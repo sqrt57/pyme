@@ -189,6 +189,19 @@ def scheme_eval(expr, env, *, evaluator, tail):
     evaluator.do_apply(closure, [], tail=tail)
 
 
+@with_evaluator
+@builtin("apply")
+def scheme_apply(proc, *argns, evaluator, tail):
+    if len(argns) < 1:
+        raise EvalError("apply: expected argument list")
+    argn = list(argns[:-1])
+    args, args_rest = interop.from_scheme_list(argns[-1])
+    if not base.nullp(args_rest):
+        raise EvalError("apply: expected proper list")
+    all_args = argn + args
+    evaluator.do_apply(proc, all_args, tail=tail)
+
+
 def eval(expr, *, env, hooks=None):
     """Evaluate scheme expr.
 

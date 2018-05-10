@@ -6,7 +6,7 @@
 + Tail calls
 + First-class environments
 + eval
-- apply
++ apply
 - Custom types
 - Benchmarks
 - Catch errors
