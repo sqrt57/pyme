@@ -5,6 +5,7 @@ import pathlib
 import sys
 
 from pyme import base
+from pyme import bytevector
 from pyme import env
 from pyme import eval
 from pyme import exceptions

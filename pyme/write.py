@@ -40,6 +40,10 @@ def write_to(obj, port):
         port.write('"')
         port.write(obj)
         port.write('"')
+    elif base.bytevectorp(obj):
+        port.write('#u8(')
+        port.write(" ".join(str(b) for b in obj))
+        port.write(')')
     else:
         port.write("#<Python: ")
         port.write(repr(obj))
@@ -60,6 +64,10 @@ def display_to(obj, port):
         port.write(str(obj))
     elif base.stringp(obj):
         port.write(obj)
+    elif base.bytevectorp(obj):
+        port.write('#u8(')
+        port.write(" ".join(str(b) for b in obj))
+        port.write(')')
     elif 'write_to' in dir(obj):
         obj.write_to(port)
     else:

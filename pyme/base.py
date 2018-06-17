@@ -54,6 +54,11 @@ def booleanp(obj):
     return isinstance(obj, bool)
 
 
+@builtin("bytevector?")
+def bytevectorp(obj):
+    return isinstance(obj, bytearray)
+
+
 @builtin("not")
 def is_false(obj):
     return obj is False

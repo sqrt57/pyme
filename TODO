@@ -7,6 +7,8 @@
 + First-class environments
 + eval
 + apply
+- Bytevector
+- File I/O
 - Custom types
 - Benchmarks
 - Catch errors
