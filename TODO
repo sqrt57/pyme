@@ -7,7 +7,7 @@
 + First-class environments
 + eval
 + apply
-- Bytevector
++ Bytevector
 - File I/O
 - Custom types
 - Benchmarks
