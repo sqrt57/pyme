@@ -110,6 +110,9 @@ class Eof:
     pass
 
 
+Eof.instance = Eof()
+
+
 class PortBase(ABC):
 
     @abstractmethod
@@ -140,6 +143,10 @@ class PortBase(ABC):
     def is_output_open(self):
         pass
 
+    @abstractmethod
+    def flush_output(self):
+        pass
+
 
 class TextualPortBase(PortBase):
 
@@ -167,6 +174,33 @@ class TextualPortBase(PortBase):
     def newline(self):
         pass
 
+
+class BinaryPortBase(PortBase):
+
     @abstractmethod
-    def flush_output(self):
+    def read_u8(self):
+        pass
+
+    @abstractmethod
+    def peek_u8(self):
+        pass
+
+    @abstractmethod
+    def is_u8_ready(self):
+        pass
+
+    @abstractmethod
+    def read_bytevector(self, k):
+        pass
+
+    @abstractmethod
+    def read_bytevector_to(self, bytevector, start=None, end=None):
+        pass
+
+    @abstractmethod
+    def write_u8(self, byte):
+        pass
+
+    @abstractmethod
+    def write_bytevector(self, bytevector, start=None, end=None):
         pass
