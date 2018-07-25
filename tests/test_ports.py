@@ -30,14 +30,14 @@ class TestReadPorts(unittest.TestCase):
         port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read(3)
-        self.assertEqual(result1, "a")
+        self.assertEqual(result1.char, "a")
         self.assertEqual(result2, "abc")
 
     def test_peek_read_all(self):
         port = ports.TextStreamPort.from_stream(io.StringIO("abcdefg"))
         result1 = port.peek_char()
         result2 = port.read()
-        self.assertEqual(result1, "a")
+        self.assertEqual(result1.char, "a")
         self.assertEqual(result2, "abcdefg")
 
     def test_peek_read_eof(self):
@@ -53,7 +53,7 @@ class TestReadPorts(unittest.TestCase):
         result1 = port.peek_char()
         result2 = port.read(3)
         result3 = port.read(3)
-        self.assertEqual(result1, "a")
+        self.assertEqual(result1.char, "a")
         self.assertEqual(result2, "abc")
         self.assertEqual(result3, "def")
 
@@ -63,9 +63,9 @@ class TestReadPorts(unittest.TestCase):
         result2 = port.read(3)
         result3 = port.peek_char()
         result4 = port.read(3)
-        self.assertEqual(result1, "a")
+        self.assertEqual(result1.char, "a")
         self.assertEqual(result2, "abc")
-        self.assertEqual(result3, "d")
+        self.assertEqual(result3.char, "d")
         self.assertEqual(result4, "def")
 
     def test_peek_readline(self):
@@ -73,7 +73,7 @@ class TestReadPorts(unittest.TestCase):
         result1 = port.peek_char()
         result2 = port.readline()
         result3 = port.readline()
-        self.assertEqual(result1, "a")
+        self.assertEqual(result1.char, "a")
         self.assertEqual(result2, "abc\n")
         self.assertEqual(result3, "def\n")
 
@@ -82,7 +82,7 @@ class TestReadPorts(unittest.TestCase):
         result1 = port.peek_char()
         result2 = port.readline()
         result3 = port.readline()
-        self.assertEqual(result1, "\n")
+        self.assertEqual(result1.char, "\n")
         self.assertEqual(result2, "\n")
         self.assertEqual(result3, "abc\n")
 

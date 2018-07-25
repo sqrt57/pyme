@@ -81,22 +81,22 @@ class Reader:
             item = port.peek_char()
             if base.eofp(item):
                 raise ReaderError('Unexpected end of file.')
-            elif item == '"':
-                port.read(1)
+            elif item.char == '"':
+                port.read_char()
                 return result
             else:
-                port.read(1)
-                result += item
+                port.read_char()
+                result += item.char
 
     def _slice_symbol_or_number(self, port):
         result = ""
         while True:
             item = port.peek_char()
-            if base.eofp(item) or not is_symbol_char(item):
+            if base.eofp(item) or not is_symbol_char(item.char):
                 return result
             else:
-                port.read(1)
-                result += item
+                port.read_char()
+                result += item.char
 
     def _parse_integer(self, string):
         sign = 1
@@ -134,46 +134,46 @@ class Reader:
         char = port.peek_char()
         if base.eofp(char):
             raise ReaderError('Unexpected end of file.')
-        elif char == 't':
-            port.read(1)
+        elif char.char == 't':
+            port.read_char()
             next_char = port.peek_char()
-            if not base.eofp(next_char) and is_symbol_char(next_char):
+            if not base.eofp(next_char) and is_symbol_char(next_char.char):
                 raise ReaderError("Invalid hash syntax: #"
-                                  + char + next_char)
+                                  + char.char + next_char.char)
             return True
-        elif char == 'f':
-            port.read(1)
+        elif char.char == 'f':
+            port.read_char()
             next_char = port.peek_char()
-            if not base.eofp(next_char) and is_symbol_char(next_char):
+            if not base.eofp(next_char) and is_symbol_char(next_char.char):
                 raise ReaderError("Invalid hash syntax: #"
-                                  + char + next_char)
+                                  + char.char + next_char.char)
             return False
         else:
-            raise ReaderError("Invalid hash syntax: #" + char)
+            raise ReaderError("Invalid hash syntax: #" + char.char)
 
     def _read(self, port):
         while True:
             char = port.peek_char()
             if base.eofp(char):
                 return char
-            elif is_white(char):
-                port.read(1)
-            elif char == ";":
+            elif is_white(char.char):
+                port.read_char()
+            elif char.char == ";":
                 port.readline()
-            elif char == "(":
-                port.read(1)
+            elif char.char == "(":
+                port.read_char()
                 return self._read_list(port)
-            elif char == ")":
-                port.read(1)
+            elif char.char == ")":
+                port.read_char()
                 return _RightBracket.instance
-            elif char == '"':
-                port.read(1)
+            elif char.char == '"':
+                port.read_char()
                 return self._read_string(port)
-            elif char == "'":
-                port.read(1)
+            elif char.char == "'":
+                port.read_char()
                 return self._read_quoted(port)
-            elif char == "#":
-                port.read(1)
+            elif char.char == "#":
+                port.read_char()
                 return self._read_special(port)
             else:
                 string = self._slice_symbol_or_number(port)

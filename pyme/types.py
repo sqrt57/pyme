@@ -24,6 +24,27 @@ class Pair:
         return write.display_pair_to(self, port)
 
 
+class Char:
+
+    __slots__ = ["_char"]
+
+    def __init__(self, char):
+        if not isinstance(char, str) or len(char) != 1:
+            raise ValueError("char should be a string of length 1")
+        self._char = char
+
+    @property
+    def char(self):
+        return self._char
+
+    def write_to(self, port):
+        port.write("#\\")
+        port.write(self.char)
+
+    def display_to(self, port):
+        port.write(self.char)
+
+
 class SymbolTable:
 
     def __init__(self):
@@ -107,7 +128,9 @@ class Environment:
 
 
 class Eof:
-    pass
+
+    def write_to(self, port):
+        port.write("#<eof>")
 
 
 Eof.instance = Eof()
@@ -128,19 +151,7 @@ class PortBase(ABC):
         pass
 
     @abstractmethod
-    def close_input(self):
-        pass
-
-    @abstractmethod
-    def close_output(self):
-        pass
-
-    @abstractmethod
-    def is_input_open(self):
-        pass
-
-    @abstractmethod
-    def is_output_open(self):
+    def is_open(self):
         pass
 
     @abstractmethod
@@ -152,6 +163,10 @@ class TextualPortBase(PortBase):
 
     @abstractmethod
     def read(self, size=1):
+        pass
+
+    @abstractmethod
+    def read_char(self):
         pass
 
     @abstractmethod

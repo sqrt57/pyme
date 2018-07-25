@@ -29,7 +29,7 @@ def listp(obj):
     return nullp(obj)
 
 
-@builtin("eof?")
+@builtin("eof-object?")
 def eofp(obj):
     return isinstance(obj, types.Eof)
 
@@ -57,6 +57,31 @@ def booleanp(obj):
 @builtin("bytevector?")
 def bytevectorp(obj):
     return isinstance(obj, bytearray)
+
+
+@builtin("port?")
+def portp(obj):
+    return isinstance(obj, types.PortBase)
+
+
+@builtin("textual-port?")
+def textual_port_p(obj):
+    return isinstance(obj, types.TextualPortBase)
+
+
+@builtin("binary-port?")
+def binary_port_p(obj):
+    return isinstance(obj, types.BinaryPortBase)
+
+
+@builtin("input-port?")
+def input_port_p(obj):
+    return isinstance(obj, types.PortBase) and obj.readable()
+
+
+@builtin("output-port?")
+def output_port_p(obj):
+    return isinstance(obj, types.PortBase) and obj.writable()
 
 
 @builtin("not")

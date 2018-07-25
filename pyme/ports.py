@@ -1,6 +1,7 @@
 import io
 
 from pyme import types
+from pyme.registry import builtin
 
 
 class TextStreamPort(types.TextualPortBase):
@@ -30,19 +31,8 @@ class TextStreamPort(types.TextualPortBase):
     def close(self):
         return self._stream.close()
 
-    def close_input(self):
-        if self._readable:
-            return self._stream.close()
-
-    def close_output(self):
-        if self._writable:
-            return self._stream.close()
-
-    def is_input_open(self):
-        return self._readable and not self._stream.closed()
-
-    def is_output_open(self):
-        return self._writable and not self._stream.closed()
+    def is_open(self):
+        return not self._stream.closed
 
     def read(self, size=-1):
         if not self._readable:
@@ -76,6 +66,10 @@ class TextStreamPort(types.TextualPortBase):
             self._peeked = self._peeked[size:]
             return result
 
+    def read_char(self):
+        result = self.read(1)
+        return result if isinstance(result, types.Eof) else types.Char(result)
+
     def peek_char(self):
         if not self._readable:
             raise io.UnsupportedOperation("not readable")
@@ -84,7 +78,7 @@ class TextStreamPort(types.TextualPortBase):
         if self._peeked == "":
             return types.Eof.instance
         else:
-            return self._peeked
+            return types.Char(self._peeked)
 
     def readline(self):
         if not self._readable:
@@ -122,8 +116,16 @@ class TextStreamPort(types.TextualPortBase):
     def flush_output(self):
         self._stream.flush()
 
+    def write_to(self, port):
+        port.write("#<textual port ")
+        if self.readable(): port.write("r")
+        if self.writable(): port.write("w")
+        port.write(" ")
+        port.write(str(self._stream))
+        port.write(">")
 
-class BinaryStreamPort(types.TextualPortBase):
+
+class BinaryStreamPort(types.BinaryPortBase):
 
     def __init__(self, stream, *, readable, writable):
         self._stream = stream
@@ -149,24 +151,15 @@ class BinaryStreamPort(types.TextualPortBase):
     def close(self):
         return self._stream.close()
 
-    def close_input(self):
-        if self._readable:
-            return self._stream.close()
-
-    def close_output(self):
-        if self._writable:
-            return self._stream.close()
-
-    def is_input_open(self):
-        return self._readable and not self._stream.closed()
-
-    def is_output_open(self):
-        return self._writable and not self._stream.closed()
+    def is_open(self):
+        return not self._stream.closed
 
     def flush_output(self):
         self._stream.flush()
 
     def read_u8(self):
+        if not self._readable:
+            raise io.UnsupportedOperation("not readable")
         result = self._stream.read(1)
         return result[0] if len(result) > 0 else types.Eof.instance
 
@@ -177,6 +170,8 @@ class BinaryStreamPort(types.TextualPortBase):
         raise NotImplementedError()
 
     def read_bytevector(self, k):
+        if not self._readable:
+            raise io.UnsupportedOperation("not readable")
         if k < 0:
             raise ValueError("number of bytes to read should be non-negative")
         if k == 0:
@@ -185,6 +180,8 @@ class BinaryStreamPort(types.TextualPortBase):
         return bytearray(result) if len(result) > 0 else types.Eof.instance
 
     def read_bytevector_to(self, bytevector, start=None, end=None):
+        if not self._readable:
+            raise io.UnsupportedOperation("not readable")
         view = memoryview(bytevector)[slice(start, end)]
         if len(view) == 0:
             return 0
@@ -192,8 +189,83 @@ class BinaryStreamPort(types.TextualPortBase):
         return result if result > 0 else types.Eof.instance
 
     def write_u8(self, byte):
+        if not self._writable:
+            raise io.UnsupportedOperation("not writable")
         return self._stream.write(bytes([byte]))
 
     def write_bytevector(self, bytevector, start=None, end=None):
+        if not self._writable:
+            raise io.UnsupportedOperation("not writable")
         view = memoryview(bytevector)[slice(start, end)]
         return self._stream.write(view)
+
+    def write_to(self, port):
+        port.write("#<binary port ")
+        if self.readable(): port.write("r")
+        if self.writable(): port.write("w")
+        port.write(" ")
+        port.write(str(self._stream))
+        port.write(">")
+
+
+@builtin("port-open?")
+def port_open_p(obj):
+    return obj.is_open()
+
+
+@builtin("open-input-file")
+def open_input_file(string):
+    return TextStreamPort.from_stream(open(string, "rt"))
+
+
+@builtin("open-binary-input-file")
+def open_binary_input_file(string):
+    return BinaryStreamPort.from_stream(open(string, "rb"))
+
+
+@builtin("open-output-file")
+def open_output_file(string):
+    return TextStreamPort.from_stream(open(string, "wt"))
+
+
+@builtin("open-binary-output-file")
+def open_binary_output_file(string):
+    return BinaryStreamPort.from_stream(open(string, "wb"))
+
+
+@builtin("close-port")
+def close_port(port):
+    port.close()
+    return False
+
+
+@builtin("read-char")
+def read_char(port):
+    return port.read_char()
+
+
+@builtin("peek-char")
+def peek_char(port):
+    return port.peek_char()
+
+
+@builtin("read-line")
+def read_line(port):
+    return port.readline()
+
+
+@builtin("read-string")
+def read_string(port, k):
+    return port.read(k)
+
+
+@builtin("eof-object")
+def eof_object():
+    return types.Eof.instance
+
+
+@builtin("char-ready?")
+def char_ready_p(port):
+    return port.is_char_ready()
+
+
