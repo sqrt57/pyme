@@ -269,3 +269,60 @@ def char_ready_p(port):
     return port.is_char_ready()
 
 
+@builtin("newline")
+def newline(port):
+    port.newline()
+    return False
+
+
+@builtin("write-char")
+def write_char(port, char):
+    port.write(char.char)
+    return False
+
+
+@builtin("write-string")
+def write_string(port, string, start=None, end=None):
+    port.write(string[slice(start, end)])
+    return False
+
+
+@builtin("flush-output-port")
+def flush_output_port(port):
+    port.flush_output()
+    return False
+
+
+@builtin("read-u8")
+def read_u8(port):
+    return port.read_u8()
+
+
+@builtin("peek-u8")
+def peek_u8(port):
+    return port.peek_u8()
+
+
+@builtin("u8-ready?")
+def u8_ready_p(port):
+    return port.is_u8_ready()
+
+
+@builtin("read-bytevector")
+def read_bytevector(k, port):
+    return port.read_bytevector(k)
+
+
+@builtin("read-bytevector!")
+def read_bytevector_to(bytevector, port, start=None, end=None):
+    return port.read_bytevector_to(bytevector, start=start, end=end)
+
+
+@builtin("write-u8")
+def write_u8(byte, port):
+    return port.write_u8(byte)
+
+
+@builtin("write-bytevector")
+def write_bytevector(bytevector, port, start=None, end=None):
+    return port.write_bytevector(bytevector, start=start, end=end)
