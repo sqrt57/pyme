@@ -8,7 +8,7 @@
 + eval
 + apply
 + Bytevector
-- File I/O
++ File I/O
 - Custom types
 - Benchmarks
 - Catch errors

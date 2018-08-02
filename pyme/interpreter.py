@@ -12,6 +12,7 @@ from pyme import exceptions
 from pyme import interop
 from pyme import ports
 from pyme import reader
+from pyme import record
 from pyme import registry
 from pyme import types
 from pyme import write

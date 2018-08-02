@@ -325,6 +325,7 @@ def decompile_code_inner(bytecode, *, result, prefix):
             result.append("{0}constants[{1}]:".format(prefix, i))
             decompile_code_inner(const, result=result, prefix=prefix+".   ")
 
+
 def decompile_code(bytecode):
     result = [""]
     decompile_code_inner(bytecode, result=result, prefix="")
