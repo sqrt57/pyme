@@ -9,7 +9,7 @@
 + apply
 + Bytevector
 + File I/O
-- Custom types
++ Custom types
 - Benchmarks
 - Catch errors
 - Custom reader

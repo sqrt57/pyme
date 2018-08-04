@@ -5,6 +5,7 @@ import unittest
 from pyme import Interpreter
 from pyme import base
 from pyme import interop
+from pyme import ports
 
 
 class TestCreateRecordType(unittest.TestCase):
@@ -15,14 +16,16 @@ class TestCreateRecordType(unittest.TestCase):
     def test_create_record_type(self):
         self.interpreter.eval_str(
             "(define r (create-record-type 'qqq '(a b) '(c)))")
-        result = self.interpreter.eval_str("r")
-        result, rest = interop.from_scheme_list(result)
-        # Constructor, type checker and 3 field accessors
-        self.assertEqual(len(result), 5)
-        self.assertTrue(base.nullp(rest))
-        self.assertEqual(result[2].car.name, "a")
-        self.assertEqual(result[3].car.name, "b")
-        self.assertEqual(result[4].car.name, "c")
+        self.assertTrue(self.interpreter.eval_str(
+            "(eq? (record-type-name r) 'qqq)"))
+
+    def test_record_write(self):
+        stream = io.StringIO()
+        self.interpreter.stdout = ports.TextStreamPort.from_stream(stream)
+        self.interpreter.eval_str("""
+            (define r (create-record-type 'qqq '(a b) '(c)))
+            (write r)
+        """)
 
 
 class TestRecord(unittest.TestCase):
@@ -32,18 +35,15 @@ class TestRecord(unittest.TestCase):
         self.interpreter.eval_str("""
             (define r (create-record-type 'qqq '(a b) '(c)))
 
-            (define create-r (car r))
-            (define r? (car (cdr r)))
-            (define a (car (cdr (cdr r))))
-            (define b (car (cdr (cdr (cdr r)))))
-            (define c (car (cdr (cdr (cdr (cdr r))))))
+            (define create-r (record-constructor r))
+            (define r? (record-type-checker r))
 
-            (define get-a (car (cdr a)))
-            (define set-a! (car (cdr (cdr a))))
-            (define get-b (car (cdr b)))
-            (define set-b! (car (cdr (cdr b))))
-            (define get-c (car (cdr c)))
-            (define set-c! (car (cdr (cdr c))))
+            (define get-a (record-field-getter 'a))
+            (define set-a! (record-field-setter 'a))
+            (define get-b (record-field-getter 'b))
+            (define set-b! (record-field-setter 'b))
+            (define get-c (record-field-getter 'c))
+            (define set-c! (record-field-setter 'c))
         """)
 
     def test_record_type(self):
@@ -68,3 +68,11 @@ class TestRecord(unittest.TestCase):
         """)
         self.assertEqual(self.interpreter.eval_str("(get-a x)"), 30)
         self.assertEqual(self.interpreter.eval_str("(get-c x)"), 35)
+
+    def test_record_write(self):
+        stream = io.StringIO()
+        self.interpreter.stdout = ports.TextStreamPort.from_stream(stream)
+        self.interpreter.eval_str("""
+            (define x (create-r 5 8))
+            (write x)
+        """)
