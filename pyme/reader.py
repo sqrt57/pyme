@@ -21,26 +21,40 @@ def is_white(char):
     return char in " \n\r\t"
 
 
+symbol_special_start_chars = frozenset("!$%&*+-./:<=>?@^_~")
+
+
+symbol_special_chars = symbol_special_start_chars.union("#")
+
+
+def is_symbol_start_char(char):
+    return char.isalnum() or char in symbol_special_start_chars
+
+
 def is_symbol_char(char):
-    return char not in "'\"(); \n\r\t"
+    return char.isalnum() or char in symbol_special_chars
 
 
-char_to_digit = {
-    '0': 0,
-    '1': 1,
-    '2': 2,
-    '3': 3,
-    '4': 4,
-    '5': 5,
-    '6': 6,
-    '7': 7,
-    '8': 8,
-    '9': 9,
+char_to_decimal_digit = {
+    '0': 0, '1': 1, '2': 2, '3': 3, '4': 4,
+    '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
 }
 
 
-def to_digit(char):
-    return char_to_digit.get(char)
+char_to_hex_digit = {
+    '0': 0, '1': 1, '2': 2, '3': 3, '4': 4,
+    '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+    'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15,
+    'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15,
+}
+
+
+def to_decimal_digit(char):
+    return char_to_decimal_digit.get(char)
+
+
+def to_hex_digit(char):
+    return char_to_hex_digit.get(char)
 
 
 def check_legal_object(obj):
@@ -100,19 +114,30 @@ class Reader:
 
     def _parse_integer(self, string):
         sign = 1
+        base = 10
+        to_digit = to_decimal_digit
+
         if string[0] == "+":
             string = string[1:]
         elif string[0] == "-":
             sign = -1
             string = string[1:]
+
+        if string[:2] == "0x" or string[:2] == "0X":
+            to_digit = to_hex_digit
+            base = 16
+            string = string[2:]
+
         if len(string) == 0:
             return None
+
         result = 0
         for char in string:
             digit = to_digit(char)
             if digit is None:
                 return None
-            result = result*10 + digit
+            result = result * base + digit
+
         return sign * result
 
     def _get_symbol_or_number(self, string):
@@ -175,9 +200,12 @@ class Reader:
             elif char.char == "#":
                 port.read_char()
                 return self._read_special(port)
-            else:
+            elif is_symbol_start_char(char.char):
                 string = self._slice_symbol_or_number(port)
                 return self._get_symbol_or_number(string)
+            else:
+                port.read_char()
+                raise ReaderError(f"Unexpected char: {char.char}.")
 
     def read(self, port):
         result = self._read(port)

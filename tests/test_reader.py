@@ -120,6 +120,26 @@ class TestReader(unittest.TestCase):
         result = self.reader.read(in_port)
         self.assertEqual(result, -23)
 
+    def test_hex_num(self):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO("0x1aB"))
+        result = self.reader.read(in_port)
+        self.assertEqual(result, 0x1ab)
+
+    def test_upper_hex_num(self):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO("0X1aB"))
+        result = self.reader.read(in_port)
+        self.assertEqual(result, 0x1ab)
+
+    def test_plus_hex_num(self):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO("+0x1aB"))
+        result = self.reader.read(in_port)
+        self.assertEqual(result, 0x1aB)
+
+    def test_minus_hex_num(self):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO("-0x1aB"))
+        result = self.reader.read(in_port)
+        self.assertEqual(result, -0x1aB)
+
     def test_zero_num(self):
         in_port = ports.TextStreamPort.from_stream(io.StringIO('0'))
         result = self.reader.read(in_port)
