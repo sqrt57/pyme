@@ -28,6 +28,22 @@ def bytevector_u8_set(bytevector, k, byte):
     return False
 
 
+@builtin("bytevector-u16-le-set!")
+def bytevector_u16_le_set(bytevector, k, value):
+    if k < 0 or k+2 > len(bytevector):
+        raise exceptions.EvalError("bytevector-u16-le-set!: cannot write outside of bytevector bounds")
+    bytevector[k : k+2] = value.to_bytes(2, byteorder='little', signed=False)
+    return False
+
+
+@builtin("bytevector-u32-le-set!")
+def bytevector_u32_le_set(bytevector, k, value):
+    if k < 0 or k+4 > len(bytevector):
+        raise exceptions.EvalError("bytevector-u32-le-set!: cannot write outside of bytevector bounds")
+    bytevector[k : k+4] = value.to_bytes(4, byteorder='little', signed=False)
+    return False
+
+
 @builtin("bytevector-copy")
 def bytevector_copy(bytevector, start=None, end=None):
     if start is None:
