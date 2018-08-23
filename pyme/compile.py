@@ -211,18 +211,25 @@ class Compiler:
             self.bytecode.code[then_addr:then_addr+3] = pos
 
     def compile_lambda(self, formals, *body, tail):
-        formals, formals_rest = interop.from_scheme_list(formals)
-        for f in formals:
-            if not base.symbolp(f):
-                raise CompileError("Non-symbol in lambda arguments list")
+        formals, rest = interop.from_scheme_list(formals)
+        if not base.nullp(rest):
+            raise CompileError("lambda argument list must be a proper list")
+        formals_rest = None
+        formals_iter = iter(formals)
+        positional = []
+        for f in formals_iter:
+            if base.keywordp(f) and f.name == ":rest":
+                f = next(formals_iter, None)
+                if not base.symbolp(f):
+                    raise CompileError("lambda: expected rest argument name after :rest keyword")
+                formals_rest = f
+            elif base.symbolp(f):
+                positional.append(f)
+            else:
+                raise CompileError(f"syntax error in lambda arguments list: {f}")
         lambda_ = Bytecode()
-        lambda_.formals = formals
-        if base.symbolp(formals_rest):
-            lambda_.formals_rest = formals_rest
-        elif base.nullp(formals_rest):
-            lambda_.formals_rest = None
-        else:
-            raise CompileError("Non-symbol in lambda rest argument")
+        lambda_.formals = positional
+        lambda_.formals_rest = formals_rest
         self.outer_bytecodes.append(self.bytecode)
         self.bytecode = lambda_
         self.compile_block(body, tail=True)

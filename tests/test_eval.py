@@ -110,7 +110,7 @@ class TestEval(unittest.TestCase):
                 symbol_table["lambda"]: Builtins.LAMBDA,
                 symbol_table["quote"]: Builtins.QUOTE,
             })
-        expr = interop.read_str("((lambda (x . y) y) 1 2 3)",
+        expr = interop.read_str("((lambda (x :rest y) y) 1 2 3)",
                                 symbol_table=symbol_table)
         result = eval.eval(expr, env=env)
         result_list, result_rest = interop.from_scheme_list(result)

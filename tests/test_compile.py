@@ -157,7 +157,7 @@ class TestCompile(unittest.TestCase):
             bindings={symbol_table["lambda"]: Builtins.LAMBDA})
         x = symbol_table["x"]
         y = symbol_table["y"]
-        expr = interop.read_str("(lambda (x . y) y)",
+        expr = interop.read_str("(lambda (x :rest y) y)",
                                 symbol_table=symbol_table)
         result = compile(expr, env=env)
         self.assertEqual(result.code, bytes([
