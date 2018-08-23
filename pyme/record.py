@@ -58,12 +58,8 @@ class Record:
 
 @builtin("create-record-type")
 def create_record_type(name, initialized_fields, other_fields):
-    initialized_fields, rest = interop.from_scheme_list(initialized_fields)
-    if not base.nullp(rest):
-        raise EvalError("create-record-type: fields list should be a proper list")
-    other_fields, rest = interop.from_scheme_list(other_fields)
-    if not base.nullp(rest):
-        raise EvalError("create-record-type: fields list should be a proper list")
+    initialized_fields = interop.from_scheme_list(initialized_fields)
+    other_fields = interop.from_scheme_list(other_fields)
     return RecordType(name, initialized_fields, other_fields)
 
 

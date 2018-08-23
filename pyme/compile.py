@@ -142,9 +142,7 @@ class Compiler:
 
     def compile_call(self, expr, *, tail):
         proc = expr.car
-        args, rest = interop.from_scheme_list(expr.cdr)
-        if not base.nullp(rest):
-            raise CompileError("Improper list in procedure call")
+        args = interop.from_scheme_list(expr.cdr)
         proc_binding = self.env.get(proc)
         if isinstance(proc_binding, _Builtin):
             return proc_binding.compile(self, *args, tail=tail)
@@ -211,9 +209,7 @@ class Compiler:
             self.bytecode.code[then_addr:then_addr+3] = pos
 
     def compile_lambda(self, formals, *body, tail):
-        formals, rest = interop.from_scheme_list(formals)
-        if not base.nullp(rest):
-            raise CompileError("lambda argument list must be a proper list")
+        formals = interop.from_scheme_list(formals)
         formals_rest = None
         formals_iter = iter(formals)
         positional = []

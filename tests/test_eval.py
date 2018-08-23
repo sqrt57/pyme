@@ -113,9 +113,8 @@ class TestEval(unittest.TestCase):
         expr = interop.read_str("((lambda (x :rest y) y) 1 2 3)",
                                 symbol_table=symbol_table)
         result = eval.eval(expr, env=env)
-        result_list, result_rest = interop.from_scheme_list(result)
+        result_list = interop.from_scheme_list(result)
         self.assertEqual(result_list, [2, 3])
-        self.assertTrue(base.nullp(result_rest))
 
     def test_define(self):
         symbol_table = types.symbol_table()

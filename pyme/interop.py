@@ -8,8 +8,8 @@ from pyme import types
 from pyme import write
 
 
-def scheme_list(list_, cdr=None):
-    result = cdr if cdr is not None else base.null()
+def scheme_list(list_):
+    result = base.null()
     for item in reversed(list_):
         result = base.cons(item, result)
     return result
@@ -20,7 +20,7 @@ def from_scheme_list(list_):
     while base.pairp(list_):
         result.append(list_.car)
         list_ = list_.cdr
-    return result, list_
+    return result
 
 
 def read_str(str_, *, symbol_table=None, keyword_table=None):

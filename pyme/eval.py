@@ -195,9 +195,7 @@ def scheme_apply(proc, *argns, evaluator, tail):
     if len(argns) < 1:
         raise EvalError("apply: expected argument list")
     argn = list(argns[:-1])
-    args, args_rest = interop.from_scheme_list(argns[-1])
-    if not base.nullp(args_rest):
-        raise EvalError("apply: expected proper list")
+    args = interop.from_scheme_list(argns[-1])
     all_args = argn + args
     evaluator.do_apply(proc, all_args, tail=tail)
 
