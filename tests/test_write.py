@@ -10,16 +10,6 @@ class TestWrite(unittest.TestCase):
         self.stream = io.StringIO()
         self.port = ports.TextStreamPort.from_stream(self.stream)
 
-    def test_write_pair(self):
-        pair = base.cons(1, "qqq")
-        write.write_to(pair, self.port)
-        self.assertEqual(self.stream.getvalue(), '(1 . "qqq")')
-
-    def test_display_pair(self):
-        pair = base.cons(1, "qqq")
-        write.display_to(pair, self.port)
-        self.assertEqual(self.stream.getvalue(), "(1 . qqq)")
-
     def test_write_list(self):
         obj = interop.scheme_list([1, 2, 3])
         write.write_to(obj, self.port)
@@ -29,16 +19,6 @@ class TestWrite(unittest.TestCase):
         obj = interop.scheme_list([1, 2, 3])
         write.display_to(obj, self.port)
         self.assertEqual(self.stream.getvalue(), "(1 2 3)")
-
-    def test_write_improper_list(self):
-        obj = interop.scheme_list([1, 2, 3], 4)
-        write.write_to(obj, self.port)
-        self.assertEqual(self.stream.getvalue(), "(1 2 3 . 4)")
-
-    def test_display_improper_list(self):
-        obj = interop.scheme_list([1, 2, 3], 4)
-        write.display_to(obj, self.port)
-        self.assertEqual(self.stream.getvalue(), "(1 2 3 . 4)")
 
     def test_write_empty_list(self):
         obj = interop.scheme_list([])
@@ -53,18 +33,18 @@ class TestWrite(unittest.TestCase):
     def test_write_quote_list(self):
         obj = interop.scheme_list([
             types.Symbol("quote"),
-            interop.scheme_list([1, 2], 3)
+            interop.scheme_list([1, 2, 3])
         ])
         write.write_to(obj, self.port)
-        self.assertEqual(self.stream.getvalue(), "'(1 2 . 3)")
+        self.assertEqual(self.stream.getvalue(), "'(1 2 3)")
 
     def test_display_quote_list(self):
         obj = interop.scheme_list([
             types.Symbol("quote"),
-            interop.scheme_list([1, 2], 3)
+            interop.scheme_list([1, 2, 3])
         ])
         write.display_to(obj, self.port)
-        self.assertEqual(self.stream.getvalue(), "'(1 2 . 3)")
+        self.assertEqual(self.stream.getvalue(), "'(1 2 3)")
 
     def test_write_quote_string(self):
         obj = interop.scheme_list([

@@ -12,10 +12,10 @@ from pyme import write
 class TestTypes(unittest.TestCase):
 
     def test_pair(self):
-        pair = base.cons(1, 2)
+        pair = base.cons(1, base.null())
         self.assertTrue(base.pairp(pair))
         self.assertEqual(pair.car, 1)
-        self.assertEqual(pair.cdr, 2)
+        self.assertTrue(base.nullp(pair.cdr))
         pair.car = "hello"
         self.assertEqual(pair.car, "hello")
 

@@ -24,9 +24,7 @@ def null():
 
 @builtin("list?")
 def listp(obj):
-    while pairp(obj):
-        obj = obj.cdr
-    return nullp(obj)
+    return pairp(obj) or nullp(obj)
 
 
 @builtin("eof-object?")

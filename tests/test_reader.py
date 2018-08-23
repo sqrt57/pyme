@@ -176,26 +176,6 @@ class TestReader(unittest.TestCase):
         result2 = self.reader.read(in_port)
         self.assertIs(result1, result2.car)
 
-    def test_dot_list(self):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO("(1 . 2)"))
-        result = self.reader.read(in_port)
-        self.assertEqual(interop.from_scheme_list(result), ([1], 2))
-
-    def test_empty_dot_list(self):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO("(. 3)"))
-        result = self.reader.read(in_port)
-        self.assertEqual(result, 3)
-
-    def test_list_dot_list(self):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO("((1 . 2))"))
-        result = self.reader.read(in_port)
-        inner, rest = interop.from_scheme_list(result)
-        self.assertEqual(len(inner), 1)
-        # import pdb; pdb.set_trace()
-        # self.assertTrue(base.listp(inner[0]))
-        self.assertTrue(base.nullp(rest))
-        self.assertEqual(interop.from_scheme_list(inner[0]), ([1], 2))
-
 
 class TestReaderError(unittest.TestCase):
 
@@ -215,15 +195,5 @@ class TestReaderError(unittest.TestCase):
 
     def test_right_bracket(self):
         in_port = ports.TextStreamPort.from_stream(io.StringIO(")"))
-        with self.assertRaises(exceptions.ReaderError):
-            self.reader.read(in_port)
-
-    def test_dot(self):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO("."))
-        with self.assertRaises(exceptions.ReaderError):
-            self.reader.read(in_port)
-
-    def test_quote_dot(self):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO("'."))
         with self.assertRaises(exceptions.ReaderError):
             self.reader.read(in_port)

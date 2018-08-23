@@ -89,9 +89,6 @@ def write_pair_to(pair, port):
             port.write(" ")
             write_to(cur.car, port)
             cur = cur.cdr
-        if not base.nullp(cur):
-            port.write(" . ")
-            write_to(cur, port)
         port.write(")")
 
 
@@ -108,7 +105,4 @@ def display_pair_to(pair, port):
             port.write(" ")
             display_to(cur.car, port)
             cur = cur.cdr
-        if not base.nullp(cur):
-            port.write(" . ")
-            display_to(cur, port)
         port.write(")")

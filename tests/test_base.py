@@ -19,19 +19,19 @@ class TestFuns(unittest.TestCase):
         ]
 
     def test_nullp(self):
-        self.assertEqual(base.nullp(base.null()), True)
-        self.assertEqual(base.nullp(base.cons(None, None)), False)
+        self.assertTrue(base.nullp(base.null()))
+        self.assertFalse(base.nullp(5))
+        self.assertFalse(base.nullp(base.cons(None, base.null())))
 
     def test_pairp(self):
-        self.assertEqual(base.pairp(base.null()), False)
-        self.assertEqual(base.pairp(5), False)
-        self.assertEqual(base.pairp(base.cons(None, None)), True)
+        self.assertFalse(base.pairp(base.null()))
+        self.assertFalse(base.pairp(5))
+        self.assertTrue(base.pairp(base.cons(None, base.null())))
 
     def test_listp(self):
         self.assertEqual(base.listp(base.null()), True)
         self.assertEqual(base.listp(5), False)
         self.assertEqual(base.listp(base.cons(1, base.null())), True)
-        self.assertEqual(base.listp(base.cons(1, 2)), False)
 
     def test_plus(self):
         self.assertEqual(self.interpreter.eval_str("(+ 5)"), 5)
@@ -49,9 +49,9 @@ class TestFuns(unittest.TestCase):
         self.assertEqual(self.interpreter.eval_str("(* 5 6 7)"), 210)
 
     def test_car_cdr(self):
-        self.interpreter.eval_str('(define x (cons 5 "qwe"))')
+        self.interpreter.eval_str("(define x (cons 5 (cons 3 '())))")
         self.assertEqual(self.interpreter.eval_str("(car x)"), 5)
-        self.assertEqual(self.interpreter.eval_str("(cdr x)"), "qwe")
+        self.assertTrue(self.interpreter.eval_str("(pair? (cdr x))"))
 
     def test_list(self):
         self.interpreter.eval_str("(define x (list 5 7))")

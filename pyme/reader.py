@@ -10,13 +10,6 @@ class _RightBracket:
 _RightBracket.instance = _RightBracket()
 
 
-class _Dot:
-    pass
-
-
-_Dot.instance = _Dot()
-
-
 def is_white(char):
     return char in " \n\r\t"
 
@@ -60,8 +53,6 @@ def to_hex_digit(char):
 def check_legal_object(obj):
     if isinstance(obj, _RightBracket):
         raise ReaderError('Unexpected ")".')
-    if isinstance(obj, _Dot):
-        raise ReaderError("Illegal use of `.'")
 
 
 class Reader:
@@ -80,13 +71,6 @@ class Reader:
             item = self._read(port)
             if isinstance(item, _RightBracket):
                 return interop.scheme_list(result)
-            elif isinstance(item, _Dot):
-                cdr = self._read(port)
-                check_legal_object(cdr)
-                right_bracket = self._read(port)
-                if not isinstance(right_bracket, _RightBracket):
-                    raise ReaderError('")" expected')
-                return interop.scheme_list(result, cdr=cdr)
             elif base.eofp(item):
                 raise ReaderError('Unexpected end of file.')
             else:
@@ -144,8 +128,6 @@ class Reader:
         return sign * result
 
     def _get_symbol_or_number(self, string):
-        if string == ".":
-            return _Dot.instance
         as_integer = self._parse_integer(string)
         if as_integer is not None:
             return as_integer

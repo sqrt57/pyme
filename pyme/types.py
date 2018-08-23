@@ -14,6 +14,8 @@ EmptyList.instance = EmptyList()
 class Pair:
 
     def __init__(self, car, cdr):
+        if not isinstance(cdr, Pair) and not isinstance(cdr, EmptyList):
+            raise ValueError("cdr of pair should be a pair or empty list")
         self.car = car
         self.cdr = cdr
 
