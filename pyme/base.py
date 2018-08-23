@@ -39,6 +39,11 @@ def symbolp(obj):
     return isinstance(obj, types.Symbol)
 
 
+@builtin("keyword?")
+def keywordp(obj):
+    return isinstance(obj, types.Keyword)
+
+
 @builtin("number?")
 def numberp(obj):
     return isinstance(obj, numbers.Integral)

@@ -66,10 +66,13 @@ def check_legal_object(obj):
 
 class Reader:
 
-    def __init__(self, *, symbol_table):
+    def __init__(self, *, symbol_table, keyword_table):
         if symbol_table is None:
-            raise TypeError("symbol_table is required, got None")
+            raise ValueError("symbol_table is required, got None")
+        if keyword_table is None:
+            raise ValueError("keyword_table is required, got None")
         self._symbol_table = symbol_table
+        self._keyword_table = keyword_table
 
     def _read_list(self, port):
         result = []
@@ -146,6 +149,8 @@ class Reader:
         as_integer = self._parse_integer(string)
         if as_integer is not None:
             return as_integer
+        if string[0] == ":":
+            return self._keyword_table[string]
         return self._symbol_table[string]
 
     def _read_quoted(self, port):

@@ -20,7 +20,13 @@ class TestTypes(unittest.TestCase):
         self.assertEqual(pair.car, "hello")
 
     def test_symbol_unique(self):
-        store = types.SymbolTable()
+        store = types.symbol_table()
+        a = store['qwe']
+        b = store['qwe']
+        self.assertEqual(a, b)
+
+    def test_keyword_unique(self):
+        store = types.keyword_table()
         a = store['qwe']
         b = store['qwe']
         self.assertEqual(a, b)

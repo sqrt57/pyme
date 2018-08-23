@@ -45,17 +45,6 @@ class Char:
         port.write(self.char)
 
 
-class SymbolTable:
-
-    def __init__(self):
-        self._symbols = weakref.WeakValueDictionary()
-
-    def __getitem__(self, key):
-        result = self._symbols.get(key)
-        if result is None:
-            result = Symbol(key)
-            self._symbols[key] = result
-        return result
 
 
 class Symbol:
@@ -72,11 +61,48 @@ class Symbol:
     def write_to(self, port):
         port.write(self.name)
 
-    def display_to(self, port):
+    def __repr__(self):
+        return f"<Symbol {self.name}>"
+
+
+class Keyword:
+
+    __slots__ = ["__weakref__", "_name"]
+
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def write_to(self, port):
         port.write(self.name)
 
     def __repr__(self):
-        return f"<Symbol:{self.name}>"
+        return f"<Keyword {self.name}>"
+
+
+class SymbolTable:
+
+    def __init__(self, constructor):
+        self._symbols = weakref.WeakValueDictionary()
+        self._constructor = constructor
+
+    def __getitem__(self, key):
+        result = self._symbols.get(key)
+        if result is None:
+            result = self._constructor(key)
+            self._symbols[key] = result
+        return result
+
+
+def symbol_table():
+    return SymbolTable(Symbol)
+
+
+def keyword_table():
+    return SymbolTable(Keyword)
 
 
 class Environment:

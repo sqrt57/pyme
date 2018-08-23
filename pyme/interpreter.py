@@ -22,8 +22,10 @@ from pyme import write
 class Interpreter:
 
     def __init__(self):
-        self.symbol_table = types.SymbolTable()
-        self.reader = reader.Reader(symbol_table=self.symbol_table)
+        self.symbol_table = types.symbol_table()
+        self.keyword_table = types.keyword_table()
+        self.reader = reader.Reader(symbol_table=self.symbol_table,
+                                    keyword_table=self.keyword_table)
         self.global_env = interop.str_bindings_to_env(
             self._default_builtins_dict, symbol_table=self.symbol_table)
         self.load_paths = [pathlib.Path.cwd()]

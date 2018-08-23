@@ -23,11 +23,14 @@ def from_scheme_list(list_):
     return result, list_
 
 
-def read_str(str_, symbol_table=None):
+def read_str(str_, *, symbol_table=None, keyword_table=None):
     if symbol_table is None:
-        symbol_table = types.SymbolTable()
+        symbol_table = types.symbol_table()
+    if keyword_table is None:
+        keyword_table = types.keyword_table()
     in_port = ports.TextStreamPort.from_stream(io.StringIO(str_))
-    reader_ = reader.Reader(symbol_table=symbol_table)
+    reader_ = reader.Reader(symbol_table=symbol_table,
+                            keyword_table=keyword_table)
     return reader_.read(in_port)
 
 
@@ -65,9 +68,11 @@ def env_to_str_bindings(env):
 
 
 def eval_str(str_, str_bindings):
-    symbol_table = types.SymbolTable()
+    symbol_table = types.symbol_table()
+    keyword_table = types.keyword_table()
     env = str_bindings_to_env(str_bindings, symbol_table=symbol_table)
-    reader_ = reader.Reader(symbol_table=symbol_table)
+    reader_ = reader.Reader(symbol_table=symbol_table,
+                            keyword_table=keyword_table)
     in_port = ports.TextStreamPort.from_stream(io.StringIO(str_))
     result = False
     while True:

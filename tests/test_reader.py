@@ -15,7 +15,8 @@ class TestReader(unittest.TestCase):
     def setUp(self):
         self.stream = io.StringIO()
         self.port = ports.TextStreamPort.from_stream(self.stream)
-        self.reader = reader.Reader(symbol_table=types.SymbolTable())
+        self.reader = reader.Reader(symbol_table=types.symbol_table(),
+                                    keyword_table=types.keyword_table())
 
     def test_empty(self):
         in_port = ports.TextStreamPort.from_stream(io.StringIO(""))
@@ -47,6 +48,12 @@ class TestReader(unittest.TestCase):
         result = self.reader.read(in_port)
         self.assertTrue(base.symbolp(result))
         self.assertEqual(result.name, "abc")
+
+    def test_keyword(self):
+        in_port = ports.TextStreamPort.from_stream(io.StringIO(":abc"))
+        result = self.reader.read(in_port)
+        self.assertTrue(base.keywordp(result))
+        self.assertEqual(result.name, ":abc")
 
     def test_symbol_space(self):
         in_port = ports.TextStreamPort.from_stream(io.StringIO(" abc "))
@@ -193,7 +200,8 @@ class TestReader(unittest.TestCase):
 class TestReaderError(unittest.TestCase):
 
     def setUp(self):
-        self.reader = reader.Reader(symbol_table=types.SymbolTable())
+        self.reader = reader.Reader(symbol_table=types.symbol_table(),
+                                    keyword_table=types.keyword_table())
 
     def test_broken_list(self):
         in_port = ports.TextStreamPort.from_stream(io.StringIO("("))
