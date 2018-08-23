@@ -65,10 +65,10 @@ class Reader:
         self._symbol_table = symbol_table
         self._keyword_table = keyword_table
 
-    def _read_list(self, port):
+    def _read_list(self, stream):
         result = []
         while True:
-            item = self._read(port)
+            item = self._read(stream)
             if isinstance(item, _RightBracket):
                 return interop.scheme_list(result)
             elif base.eofp(item):
@@ -76,28 +76,29 @@ class Reader:
             else:
                 result.append(item)
 
-    def _read_string(self, port):
+    def _read_string(self, stream):
         result = ""
         while True:
-            item = port.peek_char()
-            if base.eofp(item):
+            item = stream.read(1)
+            if item == "":
                 raise ReaderError('Unexpected end of file.')
-            elif item.char == '"':
-                port.read_char()
+            elif item == '"':
                 return result
             else:
-                port.read_char()
-                result += item.char
+                result += item
 
-    def _slice_symbol_or_number(self, port):
-        result = ""
+    def _slice_symbol_or_number(self, char, stream):
+        result = char
         while True:
-            item = port.peek_char()
-            if base.eofp(item) or not is_symbol_char(item.char):
+            position = stream.tell()
+            item = stream.read(1)
+            if item == "":
+                return result
+            elif not is_symbol_char(item):
+                stream.seek(position)
                 return result
             else:
-                port.read_char()
-                result += item.char
+                result += item
 
     def _parse_integer(self, string):
         sign = 1
@@ -135,66 +136,61 @@ class Reader:
             return self._keyword_table[string]
         return self._symbol_table[string]
 
-    def _read_quoted(self, port):
-        quoted = self._read(port)
+    def _read_quoted(self, stream):
+        quoted = self._read(stream)
         check_legal_object(quoted)
         if base.eofp(quoted):
             raise ReaderError('Unexpected end of file.')
         return interop.scheme_list([self._symbol_table["quote"], quoted])
 
-    def _read_special(self, port):
-        char = port.peek_char()
-        if base.eofp(char):
+    def _read_special(self, stream):
+        char = stream.read(1)
+        position = stream.tell()
+        if char == "":
             raise ReaderError('Unexpected end of file.')
-        elif char.char == 't':
-            port.read_char()
-            next_char = port.peek_char()
-            if not base.eofp(next_char) and is_symbol_char(next_char.char):
+        elif char == 't':
+            next_char = stream.read(1)
+            if next_char != "" and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
-                                  + char.char + next_char.char)
+                                  + char + next_char)
+            stream.seek(position)
             return True
-        elif char.char == 'f':
-            port.read_char()
-            next_char = port.peek_char()
-            if not base.eofp(next_char) and is_symbol_char(next_char.char):
+        elif char == 'f':
+            next_char = stream.read(1)
+            if next_char != "" and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
-                                  + char.char + next_char.char)
+                                  + char + next_char)
+            stream.seek(position)
             return False
         else:
-            raise ReaderError("Invalid hash syntax: #" + char.char)
+            raise ReaderError("Invalid hash syntax: #" + char)
 
-    def _read(self, port):
+    def _read(self, stream):
         while True:
-            char = port.peek_char()
-            if base.eofp(char):
-                return char
-            elif is_white(char.char):
-                port.read_char()
-            elif char.char == ";":
-                port.readline()
-            elif char.char == "(":
-                port.read_char()
-                return self._read_list(port)
-            elif char.char == ")":
-                port.read_char()
+            char = stream.read(1)
+            if char == "":
+                return base.eof()
+            elif is_white(char):
+                continue
+            elif char == ";":
+                stream.readline()
+            elif char == "(":
+                return self._read_list(stream)
+            elif char == ")":
                 return _RightBracket.instance
-            elif char.char == '"':
-                port.read_char()
-                return self._read_string(port)
-            elif char.char == "'":
-                port.read_char()
-                return self._read_quoted(port)
-            elif char.char == "#":
-                port.read_char()
-                return self._read_special(port)
-            elif is_symbol_start_char(char.char):
-                string = self._slice_symbol_or_number(port)
+            elif char == '"':
+                return self._read_string(stream)
+            elif char == "'":
+                return self._read_quoted(stream)
+            elif char == "#":
+                return self._read_special(stream)
+            elif is_symbol_start_char(char):
+                string = self._slice_symbol_or_number(char, stream)
                 return self._get_symbol_or_number(string)
             else:
-                port.read_char()
-                raise ReaderError(f"Unexpected char: {char.char}.")
+                raise ReaderError(f"Unexpected char: {char}.")
 
-    def read(self, port):
-        result = self._read(port)
+    def read(self, stream):
+        result = self._read(stream)
         check_legal_object(result)
         return result

@@ -47,24 +47,20 @@ class Interpreter:
         })
         return result
 
-    def eval_port(self, in_port, env=None):
+    def eval_stream(self, in_stream, env=None):
         if env is None:
             env = self.global_env
         result = False
         while True:
-            expr = self.reader.read(in_port)
+            expr = self.reader.read(in_stream)
             if base.eofp(expr):
                 return result
             result = eval.eval(expr, env=env,
                                hooks=self.hooks)
 
-    def eval_stream(self, stream, env=None):
-        in_port = ports.TextStreamPort.from_stream(stream)
-        return self.eval_port(in_port, env=env)
-
     def eval_str(self, string, env=None):
-        in_port = ports.TextStreamPort.from_stream(io.StringIO(string))
-        return self.eval_port(in_port, env=env)
+        in_port = io.StringIO(string)
+        return self.eval_stream(in_port, env=env)
 
     def find_file(self, filename):
         for path in self.load_paths:
@@ -78,6 +74,5 @@ class Interpreter:
         if path is None:
             msg = f"load error: {filename} not found"
             raise exceptions.EvalError(msg)
-        with path.open() as file:
-            in_port = ports.TextStreamPort.from_stream(file)
-            return self.eval_port(in_port, env=env)
+        with path.open() as in_stream:
+            return self.eval_stream(in_stream, env=env)

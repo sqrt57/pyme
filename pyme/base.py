@@ -27,6 +27,11 @@ def listp(obj):
     return pairp(obj) or nullp(obj)
 
 
+@builtin("eof-object")
+def eof():
+    return types.Eof.instance
+
+
 @builtin("eof-object?")
 def eofp(obj):
     return isinstance(obj, types.Eof)
