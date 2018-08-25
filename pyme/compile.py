@@ -210,14 +210,11 @@ class Compiler:
             self.bytecode.code[then_addr:then_addr+3] = pos
 
     def compile_lambda(self, expr, tail):
-        lambda_ = Bytecode()
-        lambda_.formals = expr.args
-        lambda_.formals_rest = expr.rest_args
-        self.outer_bytecodes.append(self.bytecode)
-        self.bytecode = lambda_
-        self.compile_block(expr.body, tail=True)
-        self.bytecode = self.outer_bytecodes.pop()
-        self.compile_const(lambda_, tail=False)
+        compiler = Compiler()
+        compiler.bytecode.formals = expr.args
+        compiler.bytecode.formals_rest = expr.rest_args
+        compiler.compile_block(expr.body, tail=True)
+        self.compile_const(compiler.bytecode, tail=False)
         self.bytecode.append(OpCode.MAKE_CLOSURE.value)
         if tail: self.bytecode.append(OpCode.RET.value)
 
@@ -351,9 +348,9 @@ def compile(expr, *, env):
     Use 'env' to resolve special forms while compiling expression.
     """
     concrete_compiler = ConcreteCompiler(env=env)
-    abstract_syntax_tree = concrete_compiler.compile_block([expr])
+    abstract_syntax_tree = concrete_compiler.compile_expr(expr)
     compiler = Compiler()
-    compiler.compile_block(abstract_syntax_tree, tail=True)
+    compiler.compile_expr(abstract_syntax_tree, tail=True)
     return compiler.bytecode
 
 
