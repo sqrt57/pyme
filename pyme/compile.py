@@ -1,15 +1,16 @@
 """Compiler from Scheme source to bytecode."""
 
-from abc import ABC, abstractmethod
 import collections
-from enum import Enum, IntEnum, auto
 import math
+from abc import ABC, abstractmethod
+from enum import Enum, IntEnum, auto
 
+from pyme import ast
 from pyme import base
-from pyme.exceptions import CompileError
 from pyme import interop
-from pyme.registry import builtin
 from pyme import types
+from pyme.exceptions import CompileError
+from pyme.registry import builtin
 
 
 class OpCode(IntEnum):
@@ -94,14 +95,13 @@ class _Builtin:
     def __init__(self, proc):
         self.proc = proc
 
-    def compile(self, compiler, *args, tail):
-        return self.proc(compiler, *args, tail=tail)
+    def compile(self, compiler, *args):
+        return self.proc(compiler, *args)
 
 
 class Compiler:
 
-    def __init__(self, *, env):
-        self.env = env
+    def __init__(self):
         self.bytecode = Bytecode()
         self.outer_bytecodes = []
 
@@ -126,40 +126,41 @@ class Compiler:
                     pass
         raise CompileError("Cannot compile opcode - argument too big")
 
-    def compile_const(self, expr, *, tail):
-        pos = self.bytecode.add_constant(expr)
+    def compile_const(self, value, *, tail):
+        pos = self.bytecode.add_constant(value)
         self.compile_shortest(
             pos,
             OpCode.CONST_1.value, None, OpCode.CONST_3.value)
         if tail: self.bytecode.append(OpCode.RET.value)
 
-    def compile_variable(self, expr, *, tail):
-        pos = self.bytecode.add_variable(expr)
+    def compile_get_variable(self, variable, *, tail):
+        pos = self.bytecode.add_variable(variable.variable)
         self.compile_shortest(
             pos,
             OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
         if tail: self.bytecode.append(OpCode.RET.value)
 
     def compile_call(self, expr, *, tail):
-        proc = expr.car
-        args = interop.from_scheme_list(expr.cdr)
-        proc_binding = self.env.get(proc)
-        if isinstance(proc_binding, _Builtin):
-            return proc_binding.compile(self, *args, tail=tail)
-        else:
-            self.compile_expr(proc, tail=False)
-            for arg in args:
-                self.compile_expr(arg, tail=False)
-            self.compile_apply(len(args), tail=tail)
+        self.compile_expr(expr.proc, tail=False)
+        for arg in expr.args:
+            self.compile_expr(arg, tail=False)
+        self.compile_apply(len(expr.args), tail=tail)
 
     def compile_expr(self, expr, *, tail):
-        if (base.numberp(expr) or base.stringp(expr)
-                or base.booleanp(expr)):
-            self.compile_const(expr, tail=tail)
-        elif base.symbolp(expr):
-            self.compile_variable(expr, tail=tail)
-        elif base.pairp(expr):
+        if isinstance(expr, ast.Constant):
+            self.compile_const(expr.value, tail=tail)
+        elif isinstance(expr, ast.GetVariable):
+            self.compile_get_variable(expr.variable, tail=tail)
+        elif isinstance(expr, ast.SetVariable):
+            self.compile_set_variable(expr.variable, expr.value, tail=tail)
+        elif isinstance(expr, ast.DefineVariable):
+            self.compile_define_variable(expr.variable, expr.value, tail=tail)
+        elif isinstance(expr, ast.Apply):
             self.compile_call(expr, tail=tail)
+        elif isinstance(expr, ast.If):
+            self.compile_if(expr.condition, expr.then_, expr.else_, tail=tail)
+        elif isinstance(expr, ast.Lambda):
+            self.compile_lambda(expr, tail=tail)
         else:
             msg = "Bad expr for compilation: {}".format(expr)
             raise CompileError(msg)
@@ -174,19 +175,19 @@ class Compiler:
                 num_args,
                 OpCode.CALL_1.value, None, OpCode.CALL_3.value)
 
-    def compile_block(self, exprs, *, tail):
+    def compile_block(self, block, *, tail):
         """Compile exprs to Bytecode.
 
         'exprs' is a list of expressions to compile.
         """
-        if len(exprs) == 0:
+        if len(block.exprs) == 0:
             if tail:
                 self.bytecode.append(OpCode.RET.value)
         else:
-            for expr in exprs[:-1]:
+            for expr in block.exprs[:-1]:
                 self.compile_expr(expr, tail=False)
                 self.bytecode.append(OpCode.DROP.value)
-            self.compile_expr(exprs[-1], tail=tail)
+            self.compile_expr(block.exprs[-1], tail=tail)
 
     def compile_if(self, if_, then_, else_, *, tail):
         self.compile_expr(if_, tail=False)
@@ -208,7 +209,82 @@ class Compiler:
             pos = self.bytecode.position().to_bytes(3, byteorder='big')
             self.bytecode.code[then_addr:then_addr+3] = pos
 
-    def compile_lambda(self, formals, *body, tail):
+    def compile_lambda(self, expr, tail):
+        lambda_ = Bytecode()
+        lambda_.formals = expr.args
+        lambda_.formals_rest = expr.rest_args
+        self.outer_bytecodes.append(self.bytecode)
+        self.bytecode = lambda_
+        self.compile_block(expr.body, tail=True)
+        self.bytecode = self.outer_bytecodes.pop()
+        self.compile_const(lambda_, tail=False)
+        self.bytecode.append(OpCode.MAKE_CLOSURE.value)
+        if tail: self.bytecode.append(OpCode.RET.value)
+
+    def compile_define_variable(self, var, value, *, tail):
+        self.compile_expr(value, tail=False)
+        pos = self.bytecode.add_variable(var.variable)
+        self.compile_shortest(
+            pos,
+            OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
+        self.bytecode.append(OpCode.PUSH_FALSE.value)
+        if tail: self.bytecode.append(OpCode.RET.value)
+
+    def compile_set_variable(self, var, value, *, tail):
+        self.compile_expr(value, tail=False)
+        pos = self.bytecode.add_variable(var.variable)
+        self.compile_shortest(
+            pos,
+            OpCode.SET_VAR_1.value, None, OpCode.SET_VAR_3.value)
+        self.bytecode.append(OpCode.PUSH_FALSE.value)
+        if tail: self.bytecode.append(OpCode.RET.value)
+
+
+class ConcreteCompiler:
+
+    def __init__(self, *, env):
+        self.env = env
+
+    def compile_const(self, expr):
+        return ast.Constant(value=expr)
+
+    def compile_variable(self, expr):
+        return ast.GetVariable(variable=ast.VariableRef(variable=expr))
+
+    def compile_call(self, expr):
+        proc = expr.car
+        args = interop.from_scheme_list(expr.cdr)
+        proc_binding = self.env.get(proc)
+        if isinstance(proc_binding, _Builtin):
+            return proc_binding.compile(self, *args)
+        else:
+            proc = self.compile_expr(proc)
+            args = [self.compile_expr(arg) for arg in args]
+            return ast.Apply(proc=proc, args=args, kwargs={})
+
+    def compile_expr(self, expr):
+        if (base.numberp(expr) or base.stringp(expr)
+                or base.booleanp(expr)):
+            return self.compile_const(expr)
+        elif base.symbolp(expr):
+            return self.compile_variable(expr)
+        elif base.pairp(expr):
+            return self.compile_call(expr)
+        else:
+            msg = "Bad expr for compilation: {}".format(expr)
+            raise CompileError(msg)
+
+    def compile_block(self, exprs):
+        exprs = [self.compile_expr(expr) for expr in exprs]
+        return ast.Block(exprs=exprs)
+
+    def compile_if(self, condition, then_, else_):
+        condition = self.compile_expr(condition)
+        then_ = self.compile_expr(then_)
+        else_ = self.compile_expr(else_)
+        return ast.If(condition=condition, then_=then_, else_=else_)
+
+    def compile_lambda(self, formals, *body):
         formals = interop.from_scheme_list(formals)
         formals_rest = None
         formals_iter = iter(formals)
@@ -223,40 +299,29 @@ class Compiler:
                 positional.append(f)
             else:
                 raise CompileError(f"syntax error in lambda arguments list: {f}")
-        lambda_ = Bytecode()
-        lambda_.formals = positional
-        lambda_.formals_rest = formals_rest
-        self.outer_bytecodes.append(self.bytecode)
-        self.bytecode = lambda_
-        self.compile_block(body, tail=True)
-        self.bytecode = self.outer_bytecodes.pop()
-        self.compile_const(lambda_, tail=False)
-        self.bytecode.append(OpCode.MAKE_CLOSURE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        body = self.compile_block(body)
+        return ast.Lambda(name=False,
+                          args=positional,
+                          rest_args=formals_rest,
+                          kwargs=None,
+                          rest_kwargs=None,
+                          body=body)
 
-    def compile_define_var(self, var, value, *, tail):
+    def compile_define_var(self, var, value):
         if not base.symbolp(var):
             raise CompileError("define: non-symbol in variable definition")
-        self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(var)
-        self.compile_shortest(
-            pos,
-            OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
-        self.bytecode.append(OpCode.PUSH_FALSE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        value = self.compile_expr(value)
+        return ast.DefineVariable(variable=ast.VariableRef(variable=var),
+                                  value=value)
 
-    def compile_define_proc(self, var, signature, *body, tail):
+    def compile_define_proc(self, var, signature, *body):
         if not base.symbolp(var):
             raise CompileError("define: non-symbol in procedure definition")
-        self.compile_lambda(signature, *body, tail=False)
-        pos = self.bytecode.add_variable(var)
-        self.compile_shortest(
-            pos,
-            OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
-        self.bytecode.append(OpCode.PUSH_FALSE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        lambda_ = self.compile_lambda(signature, *body)
+        return ast.DefineVariable(variable=ast.VariableRef(variable=var),
+                                  value=lambda_)
 
-    def compile_define(self, lvalue, *rest, tail):
+    def compile_define(self, lvalue, *rest):
         if base.symbolp(lvalue):
             if len(rest) < 1:
                 raise CompileError(
@@ -264,22 +329,18 @@ class Compiler:
             if len(rest) > 1:
                 raise CompileError(
                     "define: multiple values for identifier")
-            self.compile_define_var(lvalue, rest[0], tail=tail)
+            return self.compile_define_var(lvalue, rest[0])
         elif base.pairp(lvalue):
-            self.compile_define_proc(lvalue.car, lvalue.cdr, *rest, tail=tail)
+            return self.compile_define_proc(lvalue.car, lvalue.cdr, *rest)
         else:
             raise CompileError("define: invalid syntax")
 
-    def compile_set_var(self, var, value, *, tail):
+    def compile_set_var(self, var, value):
         if not base.symbolp(var):
-            raise CompileError("Non-symbol in set!")
-        self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(var)
-        self.compile_shortest(
-            pos,
-            OpCode.SET_VAR_1.value, None, OpCode.SET_VAR_3.value)
-        self.bytecode.append(OpCode.PUSH_FALSE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+            raise CompileError("set!: non-symbol in variable assignment")
+        value = self.compile_expr(value)
+        return ast.SetVariable(variable=ast.VariableRef(variable=var),
+                               value=value)
 
 
 def compile(expr, *, env):
@@ -289,18 +350,20 @@ def compile(expr, *, env):
 
     Use 'env' to resolve special forms while compiling expression.
     """
-    compiler = Compiler(env=env)
-    compiler.compile_block([expr], tail=True)
+    concrete_compiler = ConcreteCompiler(env=env)
+    abstract_syntax_tree = concrete_compiler.compile_block([expr])
+    compiler = Compiler()
+    compiler.compile_block(abstract_syntax_tree, tail=True)
     return compiler.bytecode
 
 
 class Builtins:
 
-    IF = builtin("if")(_Builtin(Compiler.compile_if))
-    QUOTE = builtin("quote")(_Builtin(Compiler.compile_const))
-    LAMBDA = builtin("lambda")(_Builtin(Compiler.compile_lambda))
-    DEFINE = builtin("define")(_Builtin(Compiler.compile_define))
-    SET = builtin("set!")(_Builtin(Compiler.compile_set_var))
+    IF = builtin("if")(_Builtin(ConcreteCompiler.compile_if))
+    QUOTE = builtin("quote")(_Builtin(ConcreteCompiler.compile_const))
+    LAMBDA = builtin("lambda")(_Builtin(ConcreteCompiler.compile_lambda))
+    DEFINE = builtin("define")(_Builtin(ConcreteCompiler.compile_define))
+    SET = builtin("set!")(_Builtin(ConcreteCompiler.compile_set_var))
 
 
 def decompile_code_inner(bytecode, *, result, prefix):

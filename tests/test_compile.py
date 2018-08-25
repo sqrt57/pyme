@@ -14,17 +14,17 @@ class TestCompile(unittest.TestCase):
         pass
 
     def test_opcode_1(self):
-        compiler = Compiler(env=None)
+        compiler = Compiler()
         compiler.compile_shortest(0x45, 1, 2)
         self.assertEqual(bytes(compiler.bytecode.code), b"\x01\x45")
 
     def test_opcode_3(self):
-        compiler = Compiler(env=None)
+        compiler = Compiler()
         compiler.compile_shortest(0x1122, 1, None, 3)
         self.assertEqual(bytes(compiler.bytecode.code), b"\x03\x00\x11\x22")
 
     def test_opcode_exception(self):
-        compiler = Compiler(env=None)
+        compiler = Compiler()
         with self.assertRaises(exceptions.CompileError):
             compiler.compile_shortest(0x1122, 1)
 
