@@ -1,12 +1,12 @@
 import unittest
 
-from pyme.compile import Builtins
 from pyme import eval
 from pyme import exceptions
 from pyme import interop
 from pyme import base
 from pyme import reader
 from pyme import types
+from pyme.compile_to_ast import Builtins
 
 
 class TestEval(unittest.TestCase):

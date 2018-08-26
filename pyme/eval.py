@@ -8,7 +8,7 @@ from pyme import base
 from pyme import compile
 from pyme import interop
 from pyme import types
-from pyme.compile import OpCode
+from pyme.bytecode import OpCode
 from pyme.exceptions import EvalError
 from pyme.registry import builtin
 

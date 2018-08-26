@@ -5,7 +5,10 @@ from pyme import exceptions
 from pyme import interop
 from pyme import reader
 from pyme import types
-from pyme.compile import Builtins, Bytecode, Compiler, OpCode, compile
+from pyme.bytecode import Bytecode, OpCode
+from pyme.compile import compile
+from pyme.compile_to_bytecode import BytecodeCompiler
+from pyme.compile_to_ast import Builtins
 
 
 class TestCompile(unittest.TestCase):
@@ -14,17 +17,17 @@ class TestCompile(unittest.TestCase):
         pass
 
     def test_opcode_1(self):
-        compiler = Compiler()
+        compiler = BytecodeCompiler()
         compiler.compile_shortest(0x45, 1, 2)
         self.assertEqual(bytes(compiler.bytecode.code), b"\x01\x45")
 
     def test_opcode_3(self):
-        compiler = Compiler()
+        compiler = BytecodeCompiler()
         compiler.compile_shortest(0x1122, 1, None, 3)
         self.assertEqual(bytes(compiler.bytecode.code), b"\x03\x00\x11\x22")
 
     def test_opcode_exception(self):
-        compiler = Compiler()
+        compiler = BytecodeCompiler()
         with self.assertRaises(exceptions.CompileError):
             compiler.compile_shortest(0x1122, 1)
 
