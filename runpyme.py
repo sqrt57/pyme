@@ -36,12 +36,13 @@ PROMPT = "Pyme> "
 def repl(interpreter):
     interpreter.stdout.write(INTRO)
     interpreter.stdout.flush_output()
+    reader = interpreter.reader(sys.stdin)
     while True:
         interpreter.stdout.write(PROMPT)
         interpreter.stdout.flush_output()
 
         try:
-            expr = interpreter.reader.read(interpreter.stdin)
+            expr = reader.read()
         except exceptions.ReaderError as e:
             interpreter.stdout.write("Error reading expression:\n")
             interpreter.stdout.write(str(e))

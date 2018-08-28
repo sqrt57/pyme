@@ -57,18 +57,45 @@ def check_legal_object(obj):
 
 class Reader:
 
-    def __init__(self, *, symbol_table, keyword_table):
+    def __init__(self, stream, *, symbol_table, keyword_table):
         if symbol_table is None:
             raise ValueError("symbol_table is required, got None")
         if keyword_table is None:
             raise ValueError("keyword_table is required, got None")
+        self._stream = stream
         self._symbol_table = symbol_table
         self._keyword_table = keyword_table
+        self._peeked = None
 
-    def _read_list(self, stream):
+    def read_char(self):
+        if self._peeked is None:
+            return self._stream.read(1)
+        else:
+            result = self._peeked
+            self._peeked = None
+            return result
+
+    def peek_char(self):
+        if self._peeked is None:
+            self._peeked = self._stream.read(1)
+            return self._peeked
+        else:
+            return self._peeked
+
+    def readline(self):
+        peeked = self._peeked
+        self._peeked = None
+        if peeked is None:
+            return self._stream.readline()
+        elif peeked == "\n":
+            return peeked
+        else:
+            return peeked + self._stream.readline()
+
+    def _read_list(self):
         result = []
         while True:
-            item = self._read(stream)
+            item = self._read()
             if isinstance(item, _RightBracket):
                 return interop.scheme_list(result)
             elif base.eofp(item):
@@ -76,10 +103,10 @@ class Reader:
             else:
                 result.append(item)
 
-    def _read_string(self, stream):
+    def _read_string(self):
         result = ""
         while True:
-            item = stream.read(1)
+            item = self.read_char()
             if item == "":
                 raise ReaderError('Unexpected end of file.')
             elif item == '"':
@@ -87,17 +114,16 @@ class Reader:
             else:
                 result += item
 
-    def _slice_symbol_or_number(self, char, stream):
+    def _slice_symbol_or_number(self, char):
         result = char
         while True:
-            position = stream.tell()
-            item = stream.read(1)
+            item = self.peek_char()
             if item == "":
                 return result
             elif not is_symbol_char(item):
-                stream.seek(position)
                 return result
             else:
+                self.read_char()
                 result += item
 
     def _parse_integer(self, string):
@@ -136,61 +162,58 @@ class Reader:
             return self._keyword_table[string]
         return self._symbol_table[string]
 
-    def _read_quoted(self, stream):
-        quoted = self._read(stream)
+    def _read_quoted(self):
+        quoted = self._read()
         check_legal_object(quoted)
         if base.eofp(quoted):
             raise ReaderError('Unexpected end of file.')
         return interop.scheme_list([self._symbol_table["quote"], quoted])
 
-    def _read_special(self, stream):
-        char = stream.read(1)
-        position = stream.tell()
+    def _read_special(self):
+        char = self.read_char()
         if char == "":
             raise ReaderError('Unexpected end of file.')
         elif char == 't':
-            next_char = stream.read(1)
+            next_char = self.peek_char()
             if next_char != "" and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
                                   + char + next_char)
-            stream.seek(position)
             return True
         elif char == 'f':
-            next_char = stream.read(1)
+            next_char = self.peek_char()
             if next_char != "" and is_symbol_char(next_char):
                 raise ReaderError("Invalid hash syntax: #"
                                   + char + next_char)
-            stream.seek(position)
             return False
         else:
             raise ReaderError("Invalid hash syntax: #" + char)
 
-    def _read(self, stream):
+    def _read(self):
         while True:
-            char = stream.read(1)
+            char = self.read_char()
             if char == "":
                 return base.eof()
             elif is_white(char):
                 continue
             elif char == ";":
-                stream.readline()
+                self.readline()
             elif char == "(":
-                return self._read_list(stream)
+                return self._read_list()
             elif char == ")":
                 return _RightBracket.instance
             elif char == '"':
-                return self._read_string(stream)
+                return self._read_string()
             elif char == "'":
-                return self._read_quoted(stream)
+                return self._read_quoted()
             elif char == "#":
-                return self._read_special(stream)
+                return self._read_special()
             elif is_symbol_start_char(char):
-                string = self._slice_symbol_or_number(char, stream)
+                string = self._slice_symbol_or_number(char)
                 return self._get_symbol_or_number(string)
             else:
                 raise ReaderError(f"Unexpected char: {char}.")
 
-    def read(self, stream):
-        result = self._read(stream)
+    def read(self, stream=None):
+        result = self._read()
         check_legal_object(result)
         return result

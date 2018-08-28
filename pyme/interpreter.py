@@ -25,8 +25,6 @@ class Interpreter:
     def __init__(self):
         self.symbol_table = types.symbol_table()
         self.keyword_table = types.keyword_table()
-        self.reader = reader.Reader(symbol_table=self.symbol_table,
-                                    keyword_table=self.keyword_table)
         self.global_env = interop.str_bindings_to_env(
             self._default_builtins_dict, symbol_table=self.symbol_table)
         self.load_paths = [pathlib.Path.cwd()]
@@ -48,12 +46,22 @@ class Interpreter:
         })
         return result
 
+    def reader(self, stream):
+        return reader.Reader(
+            stream,
+            symbol_table=self.symbol_table,
+            keyword_table=self.keyword_table)
+
     def eval_stream(self, in_stream, env=None):
+        stream_reader = reader.Reader(
+            in_stream,
+            symbol_table=self.symbol_table,
+            keyword_table=self.keyword_table)
         if env is None:
             env = self.global_env
         result = False
         while True:
-            expr = self.reader.read(in_stream)
+            expr = stream_reader.read(in_stream)
             if base.eofp(expr):
                 return result
             result = eval.eval(expr, env=env,
