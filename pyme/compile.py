@@ -66,5 +66,5 @@ def compile(expr, *, env):
     core_code = driver.compile_expr(expr)
     core_code.accept(TailAttribute.true)
     compiler = BytecodeCompiler()
-    compiler.compile_expr(core_code)
+    compiler.compile(core_code)
     return compiler.bytecode

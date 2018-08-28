@@ -68,6 +68,9 @@ class Bytecode:
     def extend(self, bytes_):
         self.code.extend(bytes_)
 
+    def truncate_by(self, length):
+        del self.code[len(self.code) - length:]
+
     def add_constant(self, value):
         pos = len(self.constants)
         self.constants.append(value)
