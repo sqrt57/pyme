@@ -1,6 +1,7 @@
 """Compile from abstract source tree to bytecode."""
 
 from pyme import core
+from pyme.core import TAIL
 from pyme.bytecode import Bytecode, OpCode
 from pyme.exceptions import CompileError
 
@@ -32,112 +33,117 @@ class BytecodeCompiler:
                     pass
         raise CompileError("Cannot compile opcode - argument too big")
 
-    def compile_const(self, value, *, tail):
-        pos = self.bytecode.add_constant(value)
+    def compile_const(self, element):
+        pos = self.bytecode.add_constant(element.value)
         self.compile_shortest(
             pos,
             OpCode.CONST_1.value, None, OpCode.CONST_3.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        if element.attribute[TAIL]:
+            self.bytecode.append(OpCode.RET.value)
 
-    def compile_get_variable(self, variable, *, tail):
-        pos = self.bytecode.add_variable(variable)
+    def compile_get_variable(self, element):
+        pos = self.bytecode.add_variable(element.variable)
         self.compile_shortest(
             pos,
             OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        if element.attribute[TAIL]:
+            self.bytecode.append(OpCode.RET.value)
 
-    def compile_call(self, expr, *, tail):
-        self.compile_expr(expr.proc, tail=False)
-        for arg in expr.args:
-            self.compile_expr(arg, tail=False)
-        self.compile_apply(len(expr.args), tail=tail)
+    def compile_call(self, element):
+        self.compile_expr(element.proc)
+        for arg in element.args:
+            self.compile_expr(arg)
+        if element.attribute[TAIL]:
+            self.compile_shortest(
+                len(element.args),
+                OpCode.TAIL_CALL_1.value, None, OpCode.TAIL_CALL_3.value)
+        else:
+            self.compile_shortest(
+                len(element.args),
+                OpCode.CALL_1.value, None, OpCode.CALL_3.value)
 
-    def compile_expr(self, expr, *, tail):
+    def compile_expr(self, expr):
         if isinstance(expr, core.Constant):
-            self.compile_const(expr.value, tail=tail)
+            self.compile_const(expr)
         elif isinstance(expr, core.GetVariable):
-            self.compile_get_variable(expr.variable, tail=tail)
+            self.compile_get_variable(expr)
         elif isinstance(expr, core.SetVariable):
-            self.compile_set_variable(expr.variable, expr.value, tail=tail)
+            self.compile_set_variable(expr)
         elif isinstance(expr, core.DefineVariable):
-            self.compile_define_variable(expr.variable, expr.value, tail=tail)
+            self.compile_define_variable(expr)
         elif isinstance(expr, core.Apply):
-            self.compile_call(expr, tail=tail)
+            self.compile_call(expr)
         elif isinstance(expr, core.If):
-            self.compile_if(expr.condition, expr.then_, expr.else_, tail=tail)
+            self.compile_if(expr)
         elif isinstance(expr, core.Lambda):
-            self.compile_lambda(expr, tail=tail)
+            self.compile_lambda(expr)
         else:
             msg = "Bad expr for compilation: {}".format(expr)
             raise CompileError(msg)
 
-    def compile_apply(self, num_args, *, tail):
-        if tail:
-            self.compile_shortest(
-                num_args,
-                OpCode.TAIL_CALL_1.value, None, OpCode.TAIL_CALL_3.value)
-        else:
-            self.compile_shortest(
-                num_args,
-                OpCode.CALL_1.value, None, OpCode.CALL_3.value)
-
-    def compile_block(self, block, *, tail):
+    def compile_block(self, element):
         """Compile exprs to Bytecode.
 
         'exprs' is a list of expressions to compile.
         """
-        if len(block.exprs) == 0:
-            if tail:
-                self.bytecode.append(OpCode.RET.value)
+        if len(element.exprs) == 0:
+            constant = core.Constant(value=False)
+            constant.attribute[TAIL] = element.attribute[TAIL]
+            self.compile_const(constant)
         else:
-            for expr in block.exprs[:-1]:
-                self.compile_expr(expr, tail=False)
+            for expr in element.exprs[:-1]:
+                self.compile_expr(expr)
                 self.bytecode.append(OpCode.DROP.value)
-            self.compile_expr(block.exprs[-1], tail=tail)
+            self.compile_expr(element.exprs[-1])
 
-    def compile_if(self, if_, then_, else_, *, tail):
-        self.compile_expr(if_, tail=False)
+    def compile_if(self, element):
+        self.compile_expr(element.condition)
         self.bytecode.append(OpCode.JUMP_IF_NOT_3)
         if_addr = self.bytecode.position()
         self.bytecode.extend(b"\x00\x00\x00")
 
-        self.compile_expr(then_, tail=tail)
-        if not tail:
+        self.compile_expr(element.then_)
+        if not element.attribute[TAIL]:
             self.bytecode.append(OpCode.JUMP_3)
             then_addr = self.bytecode.position()
             self.bytecode.extend(b"\x00\x00\x00")
 
         pos = self.bytecode.position().to_bytes(3, byteorder='big')
         self.bytecode.code[if_addr:if_addr+3] = pos
-        self.compile_expr(else_, tail=tail)
+        self.compile_expr(element.else_)
 
-        if not tail:
+        if not element.attribute[TAIL]:
             pos = self.bytecode.position().to_bytes(3, byteorder='big')
             self.bytecode.code[then_addr:then_addr+3] = pos
 
-    def compile_lambda(self, expr, tail):
+    def compile_lambda(self, element):
         compiler = BytecodeCompiler()
-        compiler.bytecode.formals = expr.args
-        compiler.bytecode.formals_rest = expr.rest_args
-        compiler.compile_block(expr.body, tail=True)
-        self.compile_const(compiler.bytecode, tail=False)
+        compiler.bytecode.formals = element.args
+        compiler.bytecode.formals_rest = element.rest_args
+        compiler.compile_block(element.body)
+        constant = core.Constant(value=compiler.bytecode)
+        constant.attribute[TAIL] = False
+        self.compile_const(constant)
         self.bytecode.append(OpCode.MAKE_CLOSURE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        if element.attribute[TAIL]:
+            self.bytecode.append(OpCode.RET.value)
 
-    def compile_define_variable(self, variable, value, *, tail):
-        self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(variable)
+    def compile_define_variable(self, element):
+        self.compile_expr(element.value)
+        pos = self.bytecode.add_variable(element.variable)
         self.compile_shortest(
             pos,
             OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
         self.bytecode.append(OpCode.PUSH_FALSE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        if element.attribute[TAIL]:
+            self.bytecode.append(OpCode.RET.value)
 
-    def compile_set_variable(self, variable, value, *, tail):
-        self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(variable)
+    def compile_set_variable(self, element):
+        self.compile_expr(element.value)
+        pos = self.bytecode.add_variable(element.variable)
         self.compile_shortest(
             pos,
             OpCode.SET_VAR_1.value, None, OpCode.SET_VAR_3.value)
         self.bytecode.append(OpCode.PUSH_FALSE.value)
-        if tail: self.bytecode.append(OpCode.RET.value)
+        if element.attribute[TAIL]:
+            self.bytecode.append(OpCode.RET.value)

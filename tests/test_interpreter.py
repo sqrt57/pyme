@@ -102,3 +102,7 @@ class TestInterpreter(unittest.TestCase):
     def test_apply(self):
         result = self.interpreter.eval_str("(apply + 1 2 '(3 4))")
         self.assertEqual(result, 10)
+
+    def test_empty_lambda(self):
+        result = self.interpreter.eval_str("((lambda () ))")
+        self.assertEqual(result, False)

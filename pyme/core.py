@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Element:
+class Element(ABC):
 
     def __init__(self):
         self.attribute = {}
@@ -100,3 +100,41 @@ class Lambda(Element):
 
     def accept(self, visitor):
         return visitor.lambda_(self)
+
+
+class Visitor(ABC):
+
+    @abstractmethod
+    def constant(self, element):
+        pass
+
+    @abstractmethod
+    def get_variable(self, element):
+        pass
+
+    @abstractmethod
+    def set_variable(self, element):
+        pass
+
+    @abstractmethod
+    def define_variable(self, element):
+        pass
+
+    @abstractmethod
+    def apply(self, element):
+        pass
+
+    @abstractmethod
+    def if_(self, element):
+        pass
+
+    @abstractmethod
+    def block(self, element):
+        pass
+
+    @abstractmethod
+    def lambda_(self, element):
+        pass
+
+
+TAIL = "tail"
