@@ -1,6 +1,6 @@
-"""Compile from Scheme source to abstract syntax tree."""
+"""Compile from abstract source tree to bytecode."""
 
-from pyme import ast
+from pyme import core
 from pyme.bytecode import Bytecode, OpCode
 from pyme.exceptions import CompileError
 
@@ -40,7 +40,7 @@ class BytecodeCompiler:
         if tail: self.bytecode.append(OpCode.RET.value)
 
     def compile_get_variable(self, variable, *, tail):
-        pos = self.bytecode.add_variable(variable.variable)
+        pos = self.bytecode.add_variable(variable)
         self.compile_shortest(
             pos,
             OpCode.READ_VAR_1.value, None, OpCode.READ_VAR_3.value)
@@ -53,19 +53,19 @@ class BytecodeCompiler:
         self.compile_apply(len(expr.args), tail=tail)
 
     def compile_expr(self, expr, *, tail):
-        if isinstance(expr, ast.Constant):
+        if isinstance(expr, core.Constant):
             self.compile_const(expr.value, tail=tail)
-        elif isinstance(expr, ast.GetVariable):
+        elif isinstance(expr, core.GetVariable):
             self.compile_get_variable(expr.variable, tail=tail)
-        elif isinstance(expr, ast.SetVariable):
+        elif isinstance(expr, core.SetVariable):
             self.compile_set_variable(expr.variable, expr.value, tail=tail)
-        elif isinstance(expr, ast.DefineVariable):
+        elif isinstance(expr, core.DefineVariable):
             self.compile_define_variable(expr.variable, expr.value, tail=tail)
-        elif isinstance(expr, ast.Apply):
+        elif isinstance(expr, core.Apply):
             self.compile_call(expr, tail=tail)
-        elif isinstance(expr, ast.If):
+        elif isinstance(expr, core.If):
             self.compile_if(expr.condition, expr.then_, expr.else_, tail=tail)
-        elif isinstance(expr, ast.Lambda):
+        elif isinstance(expr, core.Lambda):
             self.compile_lambda(expr, tail=tail)
         else:
             msg = "Bad expr for compilation: {}".format(expr)
@@ -124,18 +124,18 @@ class BytecodeCompiler:
         self.bytecode.append(OpCode.MAKE_CLOSURE.value)
         if tail: self.bytecode.append(OpCode.RET.value)
 
-    def compile_define_variable(self, var, value, *, tail):
+    def compile_define_variable(self, variable, value, *, tail):
         self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(var.variable)
+        pos = self.bytecode.add_variable(variable)
         self.compile_shortest(
             pos,
             OpCode.DEFINE_1.value, None, OpCode.DEFINE_3.value)
         self.bytecode.append(OpCode.PUSH_FALSE.value)
         if tail: self.bytecode.append(OpCode.RET.value)
 
-    def compile_set_variable(self, var, value, *, tail):
+    def compile_set_variable(self, variable, value, *, tail):
         self.compile_expr(value, tail=False)
-        pos = self.bytecode.add_variable(var.variable)
+        pos = self.bytecode.add_variable(variable)
         self.compile_shortest(
             pos,
             OpCode.SET_VAR_1.value, None, OpCode.SET_VAR_3.value)

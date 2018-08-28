@@ -9,7 +9,7 @@ from pyme import bytevector
 from pyme import env
 from pyme import eval
 from pyme import exceptions
-from pyme import compile_to_ast
+from pyme import drive
 from pyme import file
 from pyme import interop
 from pyme import ports

@@ -1,22 +1,22 @@
-"""Compile from abstract source tree to bytecode."""
+"""Compile from Scheme source to abstract syntax tree."""
 
-from pyme import ast
+from pyme import core
 from pyme import base
 from pyme import interop
 from pyme.exceptions import CompileError
 from pyme.registry import builtin
 
 
-class ConcreteCompiler:
+class RunDriver:
 
     def __init__(self, *, env):
         self.env = env
 
     def compile_const(self, expr):
-        return ast.Constant(value=expr)
+        return core.Constant(value=expr)
 
     def compile_variable(self, expr):
-        return ast.GetVariable(variable=ast.VariableRef(variable=expr))
+        return core.GetVariable(variable=expr)
 
     def compile_call(self, expr):
         proc = expr.car
@@ -27,7 +27,7 @@ class ConcreteCompiler:
         else:
             proc = self.compile_expr(proc)
             args = [self.compile_expr(arg) for arg in args]
-            return ast.Apply(proc=proc, args=args, kwargs={})
+            return core.Apply(proc=proc, args=args, kwargs={})
 
     def compile_expr(self, expr):
         if (base.numberp(expr) or base.stringp(expr)
@@ -43,13 +43,13 @@ class ConcreteCompiler:
 
     def compile_block(self, exprs):
         exprs = [self.compile_expr(expr) for expr in exprs]
-        return ast.Block(exprs=exprs)
+        return core.Block(exprs=exprs)
 
     def compile_if(self, condition, then_, else_):
         condition = self.compile_expr(condition)
         then_ = self.compile_expr(then_)
         else_ = self.compile_expr(else_)
-        return ast.If(condition=condition, then_=then_, else_=else_)
+        return core.If(condition=condition, then_=then_, else_=else_)
 
     def compile_lambda(self, formals, *body):
         formals = interop.from_scheme_list(formals)
@@ -67,26 +67,26 @@ class ConcreteCompiler:
             else:
                 raise CompileError(f"syntax error in lambda arguments list: {f}")
         body = self.compile_block(body)
-        return ast.Lambda(name=False,
-                          args=positional,
-                          rest_args=formals_rest,
-                          kwargs=None,
-                          rest_kwargs=None,
-                          body=body)
+        return core.Lambda(name=False,
+                           args=positional,
+                           rest_args=formals_rest,
+                           kwargs=None,
+                           rest_kwargs=None,
+                           body=body)
 
     def compile_define_var(self, var, value):
         if not base.symbolp(var):
             raise CompileError("define: non-symbol in variable definition")
         value = self.compile_expr(value)
-        return ast.DefineVariable(variable=ast.VariableRef(variable=var),
-                                  value=value)
+        return core.DefineVariable(variable=var,
+                                   value=value)
 
     def compile_define_proc(self, var, signature, *body):
         if not base.symbolp(var):
             raise CompileError("define: non-symbol in procedure definition")
         lambda_ = self.compile_lambda(signature, *body)
-        return ast.DefineVariable(variable=ast.VariableRef(variable=var),
-                                  value=lambda_)
+        return core.DefineVariable(variable=var,
+                                   value=lambda_)
 
     def compile_define(self, lvalue, *rest):
         if base.symbolp(lvalue):
@@ -106,8 +106,8 @@ class ConcreteCompiler:
         if not base.symbolp(var):
             raise CompileError("set!: non-symbol in variable assignment")
         value = self.compile_expr(value)
-        return ast.SetVariable(variable=ast.VariableRef(variable=var),
-                               value=value)
+        return core.SetVariable(variable=var,
+                                value=value)
 
 
 class _Builtin:
@@ -121,8 +121,8 @@ class _Builtin:
 
 class Builtins:
 
-    IF = builtin("if")(_Builtin(ConcreteCompiler.compile_if))
-    QUOTE = builtin("quote")(_Builtin(ConcreteCompiler.compile_const))
-    LAMBDA = builtin("lambda")(_Builtin(ConcreteCompiler.compile_lambda))
-    DEFINE = builtin("define")(_Builtin(ConcreteCompiler.compile_define))
-    SET = builtin("set!")(_Builtin(ConcreteCompiler.compile_set_var))
+    IF = builtin("if")(_Builtin(RunDriver.compile_if))
+    QUOTE = builtin("quote")(_Builtin(RunDriver.compile_const))
+    LAMBDA = builtin("lambda")(_Builtin(RunDriver.compile_lambda))
+    DEFINE = builtin("define")(_Builtin(RunDriver.compile_define))
+    SET = builtin("set!")(_Builtin(RunDriver.compile_set_var))

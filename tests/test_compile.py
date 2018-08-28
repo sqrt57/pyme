@@ -8,7 +8,7 @@ from pyme import types
 from pyme.bytecode import Bytecode, OpCode
 from pyme.compile import compile
 from pyme.compile_to_bytecode import BytecodeCompiler
-from pyme.compile_to_ast import Builtins
+from pyme.drive import Builtins
 
 
 class TestCompile(unittest.TestCase):
